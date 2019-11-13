@@ -1,6 +1,6 @@
 ---
 etitle: "Project 2"
-author: "Matt Fein"
+author: "Matt Fein, Polly McKim"
 date: "11/3/2019"
 output: html_document
 ---
