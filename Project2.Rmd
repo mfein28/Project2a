@@ -1,9 +1,28 @@
 ---
 etitle: "Project 2"
-author: "Matt Fein, Polly McKim, Jeffrey Jou"
+author: "Matt Fein, Polly McKim, Jeffrey Jou, Pancea Motowi"
 date: "11/3/2019"
 output: html_document
 ---
 
+<<<<<<< HEAD
 print('Hi')
 print("Hello")
+=======
+
+<<<<<<< HEAD
+
+lkjdfsjkldfskjldfs
+=======
+print('Hi')
+>>>>>>> 55567bf5b0222648b2b8d2594fffa190d86dadd8
+sdfkjldfskjldfskjl
+cvxkmcvxkmlkmlcvx
+
+
+```{r}
+
+
+```
+
+>>>>>>> 70823260c3e9e7d6a40f3c59ecf513b2ff56e599
