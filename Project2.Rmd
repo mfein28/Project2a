@@ -1,6 +1,6 @@
 ---
 etitle: "Project 2"
-author: "Matt Fein, Polly McKim"
+author: "Matt Fein, Polly McKim, Jeffrey Jou"
 date: "11/3/2019"
 output: html_document
 ---
