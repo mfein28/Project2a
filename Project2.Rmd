@@ -12,3 +12,12 @@ lkjdfsjkldfskjldfs
 =======
 print('Hi')
 >>>>>>> 55567bf5b0222648b2b8d2594fffa190d86dadd8
+sdfkjldfskjldfskjl
+cvxkmcvxkmlkmlcvx
+
+
+```{r}
+
+
+```
+
