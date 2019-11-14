@@ -1,28 +1,78 @@
 ---
 etitle: "Project 2"
-author: "Matt Fein, Polly McKim, Jeffrey Jou, Pancea Motowi"
-date: "11/3/2019"
-output: html_document
+author: "Matt Fein, Jeffrey Jou, Polly McKim, Pancea Motowi, and Elise Roberts"
+date: "11/26/2019"
+output: 
+  html_document: 
+    code_folding: hide
+    toc: yes
+    toc_depth: 4
+    toc_float: yes
 ---
 
-<<<<<<< HEAD
-print('Hi')
-print("Hello")
-=======
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = F,
+                      include = F,
+                      message = F, 
+                      echo = F, 
+                      comment = "")
 
-<<<<<<< HEAD
+# can add quietly=T option to the require() function
+loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.packages(x,dep=T,repos="http://cran.us.r-project.org"); if(!require(x,character.only=T)) stop("Package not found") } }
 
-lkjdfsjkldfskjldfs
-=======
-print('Hi')
->>>>>>> 55567bf5b0222648b2b8d2594fffa190d86dadd8
-sdfkjldfskjldfskjl
-cvxkmcvxkmlkmlcvx
-
-
-```{r}
-
-
+proper <- function(x){
+  paste0(toupper(substr(x, 1, 1)), tolower(substr(x, 2, nchar(x))))
+}
 ```
 
->>>>>>> 70823260c3e9e7d6a40f3c59ecf513b2ff56e599
+### 1. Introduction
+
+In Project 1, we examined the AirBnB dataset and conducted basic exploratory data analysis (EDA) with statistical inference to draw baseline relationships between different variables. While exercises in correlation using t-tests, chi-squared tests, and ANOVA tests yielded interesting results, we wanted to dive deeper into the stories behind the numbers. For that, we turn to regressions in order to determine causation between variables and introduce a dataset on crime in order to better extrapolate results to the broader population of AirBnBs. The following paper will continue by first providing a high-level EDA for the AirBnB and crime datasets. Furthermore, the paper will proceed by conducting a variety of regression techniques. We begin first with AirBnB variables only, examining what factors affect listing prices. Then, we overlay the crime data onto the AirBnB data to investigate the effects of crime on prices. The penultimate section of this paper will compare the regression results against one another in order to determine the best model(s). Lastly, this paper will conclude with a summary of findings and areas for further research. 
+
+### 2. Exploratory Data Analysis
+
+```{r}
+listings <- read.csv("~/Documents/GitHub/Project2a/listings.csv")
+crime <- read.csv("~/Documents/GitHub/Project2a/crime.csv")
+```
+
+To begin, we present various summary statistics for the two datasets (AirBnB and crime) that we are investigating. Below are the structure printouts for both datasets, beginning with AirBnB, followed by crime:  
+
+```{r}
+str(listings)
+str(crime)
+```
+
+In the AirBnB ("listings") dataset, there are `r nrow(listings)` observations and `r ncol(listings)` variables. The AirBnB dataset is relatively comprehensive, consisting of various qualitative variables including unique ID, name, and neighbourhood. Additionally, there are a number of quantitative variables such as price and number of reviews. More importantly, the listings dataset contains latitude and longitude coordinates that will serve as the link to the crime dataset.   
+
+On the other hand, the crime dataset contains `r nrow(crime)` observations and `r ncol(crime)` variables. Furthermore, this dataset shows 9 types of offenses as well as the method of crime (gun, knife, others) and time of day (day, evening, midnight). Similarly, the crime dataset is labeled by latitude and longitude coordinates as well as census tract, which will be important variables for joining the two datasets together.
+
+#### 2.1 Summary Statistics
+
+An important step to EDA is exploring the data through summary statistics. Since we have already examined the listings dataset thoroughly in Project 1, the following section will primarily focus on the crime dataset. Since we are interested in how crime levels affect AirBnB prices, it is important to take a closer look at the different types of crime. Below is a bar chart of different types of offenses by ward:
+
+```{r}
+loadPkg("ggplot2")
+fig1 <- ggplot(crime, aes(x = WARD, fill = proper(as.character(OFFENSE)))) + 
+  geom_bar() +
+  theme_bw() +
+  labs(x = "Ward",
+       y = "Frequency",
+       fill = "Type of Offense") + 
+  scale_x_discrete(limits = c(1:8, "1"))
+print(fig1 + ggtitle("Frequency of Offense by Type and Ward"))
+```
+
+As evident in the bar chart, Ward 2 has the the most number of crimes, regardless of type, at `r sum(crime$WARD == "2")` total offenses. Below is a table of the number of total crimes, by ward: 
+
+``` {r, include=T}
+loadPkg("pander")
+loadPkg("kableExtra")
+
+WARD <- c(1:8)
+dt <- table(crime$WARD, crime$OFFENSE)
+
+dt <- cbind(WARD, dt)
+kable(dt) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F)
+```
