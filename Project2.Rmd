@@ -11,6 +11,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
+library(dplyr)
 knitr::opts_chunk$set(warning = F,
                       include = F,
                       message = F, 
@@ -48,12 +49,13 @@ This data is shared via an automated process where addresses are geocoded to the
 ### 3. Exploratory Data Analysis
 
 ```{r}
-listings <- read.csv("~/Documents/GitHub/Project2a/listings.csv")
-crime <- read.csv("~/Documents/GitHub/Project2a/crime.csv")
+listings <- read.csv("listings.csv")
+listings$neighbourhoodCount <- table(listings$neighbourhood)
+crime <- read.csv("crime.csv")
 crime$uniqueID <- c(1:nrow(crime))
 ```
 
-To begin, we present various summary statistics for the two datasets (AirBnB and crime) that we are investigating. Below are the structure printouts for both datasets, beginning with AirBnB, followed by crime:  
+To begin, we present various summary statistics for the two datasets (Airbnb and crime) that we are investigating. Below are the structure printouts for both datasets, beginning with Airbnb, followed by crime:  
 
 ```{r}
 loadPkg("scales")
@@ -61,13 +63,13 @@ str(listings)
 str(crime)
 ```
 
-In the AirBnB ("listings") dataset, there are `r comma(nrow(listings))` observations and `r ncol(listings)` variables. The AirBnB dataset is relatively comprehensive, consisting of various qualitative variables including unique ID, name, and neighbourhood. Additionally, there are a number of quantitative variables such as price and number of reviews. More importantly, the listings dataset contains latitude and longitude coordinates that will serve as the link to the crime dataset.   
+In the Airbnb ("listings") dataset, there are `r comma(nrow(listings))` observations and `r ncol(listings)` variables. The Airbnb dataset is relatively comprehensive, consisting of various qualitative variables including unique ID, name, and neighbourhood. Additionally, there are a number of quantitative variables such as price and number of reviews. More importantly, the listings dataset contains latitude and longitude coordinates that will serve as the link to the crime dataset.   
 
 On the other hand, the crime dataset contains `r comma(nrow(crime))` observations and `r comma(ncol(crime))` variables. Furthermore, this dataset shows 9 types of offenses as well as the method of crime (gun, knife, others) and time of day (day, evening, midnight). Similarly, the crime dataset is labeled by latitude and longitude coordinates as well as census tract, which will be important variables for joining the two datasets together.
 
 #### 3.1 Summary Statistics
 
-An important step to EDA is exploring the data through summary statistics. Since we have already examined the listings dataset thoroughly in Project 1, the following section will primarily focus on the crime dataset. Since we are interested in how crime levels affect AirBnB prices, it is important to take a closer look at the different types of crime. Below is a summary table of the number of crimes by offense and ward: 
+An important step to EDA is exploring the data through summary statistics. Since we have already examined the listings dataset thoroughly in Project 1, the following section will primarily focus on the crime dataset. Since we are interested in how crime levels affect Airbnb prices, it is important to take a closer look at the different types of crime. Below is a summary table of the number of crimes by offense and ward: 
 
 ``` {r, include=T}
 loadPkg("pander")
@@ -120,11 +122,11 @@ fig2 <- plot_ly(pie_input,
 fig2
 ```
 
-These summary statistics and charts are particularly important in the context of AirBnB listings. It is not unreasonable to hypothesize that wards with higher number of crimes overall may also exhibit an adverse effect on listing prices. As fewer people want to live in those areas, demand for AirBnBs decrease and in turn, so do prices. Further analysis using regression techniques will be needed to determine the overall effect of crime on prices. 
+These summary statistics and charts are particularly important in the context of Airbnb listings. It is not unreasonable to hypothesize that wards with higher number of crimes overall may also exhibit an adverse effect on listing prices. As fewer people want to live in those areas, demand for Airbnbs decrease and in turn, so do prices. Further analysis using regression techniques will be needed to determine the overall effect of crime on prices. 
 
 ### 4. Regression Models
 
-After conducting EDA and looking at the variables at a high-level, we move onto generating regression models to estimate causal relationships between the two datasets. In this section, we examine five models using the techniques learned in class, beginning with a simple linear regression model within the AirBnB dataset alone. Then we move to a logistic regression in the same dataset. In the third model, we overlay the crime dataset onto the listings dataset in order to explore how crime affects AirBnB listing prices. The penultimate model consists of a hedonic regression used to predict price. Lastly, we implement machine learning methodology to breakdown the primary drivers of price.
+After conducting EDA and looking at the variables at a high-level, we move onto generating regression models to estimate causal relationships between the two datasets. In this section, we examine five models using the techniques learned in class, beginning with a simple linear regression model within the Airbnb dataset alone. Then we move to a logistic regression in the same dataset. In the third model, we overlay the crime dataset onto the listings dataset in order to explore how crime affects Airbnb listing prices. The penultimate model consists of a hedonic regression used to predict price. Lastly, we implement machine learning methodology to breakdown the primary drivers of price.
 
 #### 4.1 Linear Regression Model
 
