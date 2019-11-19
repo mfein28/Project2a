@@ -112,6 +112,27 @@ After conducting EDA and looking at the variables at a high-level, we move onto 
 #### 3.1 Linear Regression Model
 
 [POLLY'S MODEL]
+```{r base_lib, include=T, echo=F}
+library("dplyr")
+library("car")
+library("corrplot")
+```
+
+``````{r corr, include=T, echo=F}
+listingsreg<-select(listings,9:15)
+listingsreg<-select(listingsreg,-last_review,-room_type, -reviews_per_month)
+#CorBRN=cor(listings)
+#loadPkg("corrplot")
+#corrplot(CorBRN, method = "number", type="upper")
+
+#str(listings)
+str(listingsreg)
+Listingscor=cor(listingsreg)
+loadPkg("corrplot")
+corrplot(Listingscor, method = "number", type="upper")
+
+```
+```
 
 #### 3.2 Logistic Regression Model
 
