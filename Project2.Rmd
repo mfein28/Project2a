@@ -11,7 +11,6 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-library(dplyr)
 knitr::opts_chunk$set(warning = F,
                       include = F,
                       message = F, 
@@ -24,6 +23,8 @@ loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.
 proper <- function(x){
   paste0(toupper(substr(x, 1, 1)), tolower(substr(x, 2, nchar(x))))
 }
+
+loadPkg("dplyr")
 ```
 
 ### 1. Introduction
@@ -73,7 +74,6 @@ An important step to EDA is exploring the data through summary statistics. Since
 
 ``` {r, include=T}
 loadPkg("pander")
-loadPkg("dplyr")
 loadPkg("kableExtra")
 
 WARD <- c(1:8)
@@ -82,7 +82,8 @@ TOTAL <- rowSums(dt)
 dt <- cbind(WARD, dt, TOTAL)
 
 kable(dt) %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F, position = "left")
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = F, position = "left") %>%
+  column_spec(1, color = "red")
 ```
 
 Ward 2 has the most amount of crimes (`r comma(TOTAL[2])`), followed by Ward 6 at `r comma(TOTAL[6])` crimes. Moreover, crime type "Theft/Other" is the most common in all wards as seen in the bar chart above. 
