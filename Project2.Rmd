@@ -11,6 +11,8 @@ output:
 ---
 
 ```{r setup, include=FALSE}
+library(readr)
+
 knitr::opts_chunk$set(warning = F,
                       include = F,
                       message = F, 
@@ -32,8 +34,8 @@ In Project 1, we examined the Airbnb dataset and conducted basic exploratory dat
 ### 2. Exploratory Data Analysis
 
 ```{r}
-listings <- read.csv("listings.csv")
-crime <- read.csv("crime.csv")
+listings <- read_csv("listings.csv")
+crime <- read_csv("crime.csv")
 ```
 
 To begin, we present various summary statistics for the two datasets (Airbnb and crime) that we are investigating. Below are the structure printouts for both datasets, beginning with Airbnb, followed by crime:  
@@ -53,9 +55,9 @@ On the other hand, the crime dataset contains `r comma(nrow(crime))` observation
 An important step to EDA is exploring the data through summary statistics. Since we have already examined the listings dataset thoroughly in Project 1, the following section will primarily focus on the crime dataset. Since we are interested in how crime levels affect Airbnb prices, it is important to take a closer look at the different types of crime. Below is a summary table of the number of crimes by offense and ward: 
 
 ``` {r, include=T}
-loadPkg("pander")
-loadPkg("dplyr")
-loadPkg("kableExtra")
+library("pander")
+library("dplyr")
+l("kableExtra")
 
 WARD <- c(1:8)
 dt <- table(crime$WARD, crime$OFFENSE)
@@ -73,7 +75,7 @@ Ward 2 has the most amount of crimes (`r comma(TOTAL[2])`), followed by Ward 6 a
 To better understand the crime data and the underlying relationships, data visualization is a useful tool. This section presents two charts: a bar chart and pie chart. The bar chart is presented below:
 
 ```{r, include = T}
-loadPkg("ggplot2")
+library("ggplot2")
 fig1 <- ggplot(crime, aes(x = WARD, fill = proper(as.character(OFFENSE)))) + 
   geom_bar() +
   theme_bw() +
@@ -115,7 +117,10 @@ After conducting EDA and looking at the variables at a high-level, we move onto 
 
 #### 3.2 Logistic Regression Model
 
-[ELISE'S MODEL]
+```{r logreg, echo=FALSE, include=FALSE}
+
+
+```
 
 #### 3.3 Crime and Listing Regressions
 
