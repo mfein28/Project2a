@@ -133,7 +133,7 @@ loadPkg("corrplot")
 corrplot(Listingscor, method = "number", type="upper")
 
 ```
-```
+
 
 #### 3.2 Logistic Regression Model
 
