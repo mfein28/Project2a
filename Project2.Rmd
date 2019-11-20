@@ -107,7 +107,6 @@ print(fig1 + ggtitle("Frequency of Offense by Type and Ward"))
 Additionally, the same data can be visualized as a pie chart, which shows the percentages of the total number of crimes relative to each ward:
 
 ```{r, include = T}
-loadPkg("dplyr")
 loadPkg("plotly")
 pie_input <- as.data.frame(cbind(WARD, TOTAL)) %>%
   arrange(WARD)
@@ -170,9 +169,10 @@ listings <- subset(listings, !is.na(listings$zip))
 
 # Join listings with crime dataset by zip code
 crime_listings <- left_join(listings, crime, by = "zip") 
-crime_listings <- crime_listings[!duplicated(crime_listings$uniqueID), ] # 13,775 observations
+crime_listings_no_dup <- crime_listings[!duplicated(crime_listings$uniqueID), ] # 13,775 observations
 
-crime_count <- crime_listings %>%
+crime_count <- crime_listings_no_dup %>%
+  filter(!is.na(zip)) %>%
   select(id, zip, price, OFFENSE) %>%
   group_by(zip, as.character(OFFENSE)) %>%
   summarise(count = n()) %>%
@@ -201,24 +201,52 @@ options(qwraps2_markup = "markdown")
 
 summ_table_input <- listings %>%
   select(zip, price) %>%
-  filter(zip == "20004" | zip == "20010" | zip == "20009" | zip == "20002")
+  filter(zip == "20004" | zip == "20010" | zip == "20009" | zip == "20002" & price < 1500)
 
 summ_table <- 
   list("Price" = 
          list("min" = ~min(.data$price),
               "max" = ~max(.data$price),
+              "median" = ~median(.data$price),
               "mean (sd)" = ~qwraps2::mean_sd(.data$price)))
 tab <- summary_table(dplyr::group_by(summ_table_input, zip), summ_table)
 print(tab,
       rtitle = "Summary Statistics",
       cnames = c("20002 (low)", "20004 (high)", "20009 (low)", "20010 (high)"))
+```
 
+```{r, include = T}
 fig4 <- ggplot(subset(summ_table_input, price < 1500), aes(x = zip, y = price, fill = zip)) + 
   geom_boxplot() + 
   theme_bw() +
   labs(x = "Zip Code",
-       y = "Price")
-print(fig4 + ggtitle("Boxplot of Prices by Zip Code"))
+       y = "Price",
+       fill = "Zip Code")
+print(fig4 + ggtitle("Boxplot of Listing Prices by Zip Code"))
+```
+
+Interestingly enough, looking at the basic summary tables of the average prices in the two highest crime zip codes (20004 and 20010) and lowest crime zip codes (20002 and 20009), the former has a higher average listing price. This result suggests that perhaps contrary to conventional wisdom, it is indeed the case that crime is targeted in more affluent neighborhoods, if we assume that higher listing prices are correlated with weathlier neighborhoods (that may be the subject of a future study). Of course, this table and subsquent boxplot only captures a very small sample -- too small to make any substantive claims about crime and listing price. In fact, if we had any such claims, we would be falling into the classic trope of correlation implying causation, which we have well learned to be false. As such, we now turn our attention to the most important topic on hand: regressions.  
+
+We begin first by building a simple regression model to estimate the effect of crime on listing price. After assessing this preliminary model using various evaluation techniques, we aim to tune the model, either through linearization or adding additional relevant regressors to the model. Below are the regression results from the simple linear regression of price vs. total crime:
+
+``` {r, include = T}
+loadPkg("memisc")
+lm1_input <- crime_listings %>%
+  group_by(price) %>%
+  summarise(crimes = n())
+
+lm1 <- lm(price~crimes, lm1_input)
+reg_table <- mtable("Model 1" = lm1,
+                    summary.stats = c("R-squared", "F", "p", "N"))
+reg_table
+```
+
+The OLS estimate for the number of crimes on listing prices produces a coefficient of -0.010, suggesting that increasing the number of crimes by 1 will decrease the listing price by 1 cent. This coefficient is statistically significantly different from 0. Additionally, this model yields an R^2^ value of 0.021, indicating that only 2.1% of the variation in price is captured in this regression specification. Moreover, the p-value is significantly smaller than the alpha level of 0.05, suggesting that the overall model is significant.  
+
+In general, the simple linear regression model substantiates the conventional hypothesis that higher crime will lead to lower prices. However, the low R^2^ shows that there is still work that can be done to improve the model. Now that we've established the connection between crime and prices, it is also interesting to determine what type of crime affects prices the most. Below is the regression output of price vs. type of crime:
+
+``` {r, include = T}
+
 ```
 
 #### 4.4 Hedonic Regression Model
