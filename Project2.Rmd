@@ -11,6 +11,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
+library(dplyr)
 knitr::opts_chunk$set(warning = F,
                       include = F,
                       message = F, 
@@ -32,7 +33,8 @@ In Project 1, we examined the Airbnb dataset and conducted basic exploratory dat
 ### 2. Exploratory Data Analysis
 
 ```{r}
-listings <- read.csv("listings.csv")
+listings <- read_csv('listings.csv')
+listings$neighbourhoodCount <- table(listings$neighbourhood)
 crime <- read.csv("crime.csv")
 ```
 
