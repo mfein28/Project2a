@@ -11,8 +11,8 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-library(readr)
 
+library(dplyr)
 knitr::opts_chunk$set(warning = F,
                       include = F,
                       message = F, 
@@ -34,8 +34,10 @@ In Project 1, we examined the Airbnb dataset and conducted basic exploratory dat
 ### 2. Exploratory Data Analysis
 
 ```{r}
-listings <- read_csv("listings.csv")
-crime <- read_csv("crime.csv")
+listings <- read.csv('~/Project2a/listings.csv')
+listings$neighbourhoodCount <- table(listings$neighbourhood)
+crime <- read.csv("crime.csv")
+
 ```
 
 To begin, we present various summary statistics for the two datasets (Airbnb and crime) that we are investigating. Below are the structure printouts for both datasets, beginning with Airbnb, followed by crime:  
@@ -57,7 +59,7 @@ An important step to EDA is exploring the data through summary statistics. Since
 ``` {r, include=T}
 library("pander")
 library("dplyr")
-l("kableExtra")
+library("kableExtra")
 
 WARD <- c(1:8)
 dt <- table(crime$WARD, crime$OFFENSE)
