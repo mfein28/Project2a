@@ -24,6 +24,7 @@ proper <- function(x){
   paste0(toupper(substr(x, 1, 1)), tolower(substr(x, 2, nchar(x))))
 }
 
+loadPkg("memisc")
 loadPkg("dplyr")
 ```
 
@@ -195,6 +196,16 @@ fig3
 
 As shown above, even within the the sample of the ten zip codes with the most crime occurences, the first zip code (20004; 1,145 total crimes) has more than double the number of crimes than the tenth zip code (20002; 504 total crimes). Turning our attention to how prices differ, we take a look at the summary statistics for listing price in these two neighborhoods, first in the form of a five number summary, then in the form of a boxplot:
 
+```{r, include = T}
+fig4 <- ggplot(subset(summ_table_input, price < 1500), aes(x = zip, y = price, fill = zip)) + 
+  geom_boxplot() + 
+  theme_bw() +
+  labs(x = "Zip Code",
+       y = "Price",
+       fill = "Zip Code")
+print(fig4 + ggtitle("Boxplot of Listing Prices by Zip Code"))
+```
+
 ``` {r, include = T, results = "asis"}
 loadPkg("qwraps2")
 options(qwraps2_markup = "markdown")
@@ -215,38 +226,69 @@ print(tab,
       cnames = c("20002 (low)", "20004 (high)", "20009 (low)", "20010 (high)"))
 ```
 
-```{r, include = T}
-fig4 <- ggplot(subset(summ_table_input, price < 1500), aes(x = zip, y = price, fill = zip)) + 
-  geom_boxplot() + 
-  theme_bw() +
-  labs(x = "Zip Code",
-       y = "Price",
-       fill = "Zip Code")
-print(fig4 + ggtitle("Boxplot of Listing Prices by Zip Code"))
-```
-
 Interestingly enough, looking at the basic summary tables of the average prices in the two highest crime zip codes (20004 and 20010) and lowest crime zip codes (20002 and 20009), the former has a higher average listing price. This result suggests that perhaps contrary to conventional wisdom, it is indeed the case that crime is targeted in more affluent neighborhoods, if we assume that higher listing prices are correlated with weathlier neighborhoods (that may be the subject of a future study). Of course, this table and subsquent boxplot only captures a very small sample -- too small to make any substantive claims about crime and listing price. In fact, if we had any such claims, we would be falling into the classic trope of correlation implying causation, which we have well learned to be false. As such, we now turn our attention to the most important topic on hand: regressions.  
 
 We begin first by building a simple regression model to estimate the effect of crime on listing price. After assessing this preliminary model using various evaluation techniques, we aim to tune the model, either through linearization or adding additional relevant regressors to the model. Below are the regression results from the simple linear regression of price vs. total crime:
 
 ``` {r, include = T}
-loadPkg("memisc")
-lm1_input <- crime_listings %>%
-  group_by(price) %>%
-  summarise(crimes = n())
+crime_rates <- crime %>%
+  select(zip, OFFENSE) %>%
+  group_by(zip) %>%
+  mutate(arson_rate = sum(OFFENSE == "ARSON") / nrow(crime) * 100,
+         assualt_rate = sum(OFFENSE == "ASSAULT W/DANGEROUS WEAPON") / nrow(crime) * 100,
+         burglary_rate = sum(OFFENSE == "BURGLARY") / nrow(crime) * 100,
+         homicide_rate = sum(OFFENSE == "HOMICIDE") / nrow(crime) * 100,
+         motorTheft_rate = sum(OFFENSE == "MOTOR VEHICLE THEFT") / nrow(crime) * 100,
+         robbery_rate = sum(OFFENSE == "ROBBERY") / nrow(crime) * 100,
+         sexAbuse_rate = sum(OFFENSE == "SEX ABUSE") / nrow(crime) * 100,
+         theftAuto_rate = sum(OFFENSE == "THEFT F/AUTO") / nrow(crime) * 100,
+         theftOther_rate = sum(OFFENSE == "THEFT/OTHER") / nrow(crime) * 100)
 
-lm1 <- lm(price~crimes, lm1_input)
+lm1_input <- left_join(listings, crime_rates, by = "zip")
+lm1_input <- lm1_input %>%
+  group_by(id) %>%
+  mutate(total_crimes = n()) %>%
+  filter(!duplicated(id)) 
+  
+lm1 <- lm(price~total_crimes, lm1_input)
 reg_table <- mtable("Model 1" = lm1,
                     summary.stats = c("R-squared", "F", "p", "N"))
 reg_table
 ```
 
-The OLS estimate for the number of crimes on listing prices produces a coefficient of -0.010, suggesting that increasing the number of crimes by 1 will decrease the listing price by 1 cent. This coefficient is statistically significantly different from 0. Additionally, this model yields an R^2^ value of 0.021, indicating that only 2.1% of the variation in price is captured in this regression specification. Moreover, the p-value is significantly smaller than the alpha level of 0.05, suggesting that the overall model is significant.  
+The OLS estimate for the number of crimes on listing prices produces a coefficient of -0.024, suggesting that increasing the number of crimes by 1 will decrease the listing price by 2.4 cents. However, this coefficient is not statistically significantly different from 0. Additionally, this model yields an R^2^ value of 0.00, indicating that only none of the variation in price is captured in this regression specification. Moreover, the p-value is much larger than the alpha level of 0.05, suggesting that the overall model is not significant.  
 
-In general, the simple linear regression model substantiates the conventional hypothesis that higher crime will lead to lower prices. However, the low R^2^ shows that there is still work that can be done to improve the model. Now that we've established the connection between crime and prices, it is also interesting to determine what type of crime affects prices the most. Below is the regression output of price vs. type of crime:
+While the estimated effect of total crime on price does not show any significant results and therefore cannot shed light on either of the hypotheses, the sign of the coefficient does suggest that the conventional theory might be the true story. However, the low R^2^ value shows that there is still much work that can be done to improve the model. Now that we've established the connection between crime and prices, it is also interesting to determine what type of crime affects prices the most. Below is the regression output of price vs. type of crime:
 
 ``` {r, include = T}
+lm2 <- lm(price~theftOther_rate + theftAuto_rate + robbery_rate + motorTheft_rate,
+          data = lm1_input)
 
+lm3 <- lm(price~theftOther_rate + 
+            theftAuto_rate + 
+            robbery_rate + 
+            motorTheft_rate + 
+            number_of_reviews +
+            as.factor(room_type),
+          data = lm1_input)
+
+reg_table <- mtable("Model 1" = lm1,
+                    "Model 2" = lm2,
+                    "Model 3" = lm3,
+                    summary.stats = c("R-squared", "F", "p", "N"))
+
+reg_table <- 
+  relabel(reg_table, 
+          "(Intercept)" = "Constant", total_crimes = "Crimes",
+          theftAuto_rate = "Theft (from auto)",
+          theftOther_rate = "Theft (other)",
+          robbery_rate = "Robbery",
+          motorTheft_rate = "Motor Theft",
+          number_of_reviews = "Number of Reviews",
+          `as.factor(room_type): Private room/Entire home/apt` = "Private Room/Entire Home/Apt",
+          `as.factor(room_type): Shared room/Entire home/apt` = "Shared Room/Entire Home/Apt")
+
+reg_table
 ```
 
 #### 4.4 Hedonic Regression Model
