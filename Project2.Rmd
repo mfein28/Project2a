@@ -25,14 +25,14 @@ proper <- function(x){
   paste0(toupper(substr(x, 1, 1)), tolower(substr(x, 2, nchar(x))))
 }
 
-packages <- c('dplyr', 'ggplot2', 'qwraps2', 'memisc', 'pander', 'kableExtra', 'plotly', 'zipcode')
+packages <- c('ggplot2', 'qwraps2', 'memisc', 'pander', 'kableExtra', 'plotly', 'zipcode', 'scales', 'tidyverse')
 lapply(packages, require, character.only = TRUE)
 
 ```
 
 ### 1. Introduction
 
-In Project 1, we examined the AirBnB dataset and conducted basic exploratory data analysis (EDA) with statistical inference to draw baseline relationships between different variables. While exercises in correlation using t-tests, chi-squared tests, and ANOVA tests yielded interesting results, we wanted to dive deeper into the stories behind the numbers. For that, we turn to regressions in order to determine causation between variables and introduce a dataset on crime in order to better extrapolate results to the broader population of AirBnBs. The following paper will continue by describing the data sources for the two dataset. The following section will provide a high-level EDA for the AirBnB and crime datasets. The paper will proceed by conducting a variety of regression techniques, beginning first with AirBnB variables only, examining what factors affect listing prices. Then, second, we overlay the crime data onto the AirBnB data to investigate the effects of crime on prices. The penultimate section of this paper will compare the regression results against one another in order to determine the best model(s). Lastly, this paper will conclude with a summary of findings and areas for further research. 
+In Project 1, we examined the AirBnB dataset and conducted basic exloratory data analysis (EDA) with statistical inference to draw baseline relationships between different variables. While exercises in correlation using t-tests, chi-squared tests, and ANOVA tests yielded interesting results, we wanted to dive deeper into the stories behind the numbers. For that, we turn to regressions in order to determine causation between variables and introduce a dataset on crime in order to better extrapolate results to the broader population of AirBnBs. The following paper will continue by describing the data sources for the two dataset. The following section will provide a high-level EDA for the AirBnB and crime datasets. The paper will proceed by conducting a variety of regression techniques, beginning first with AirBnB variables only, examining what factors affect listing prices. Then, second, we overlay the crime data onto the AirBnB data to investigate the effects of crime on prices. The penultimate section of this paper will compare the regression results against one another in order to determine the best model(s). Lastly, this paper will conclude with a summary of findings and areas for further research. 
 
 ### 2. Data Sources
 
@@ -56,13 +56,17 @@ This data is shared via an automated process where addresses are geocoded to the
 listings <- read.csv("listings.csv")
 listings$neighbourhoodCount <- table(listings$neighbourhood)
 crime <- read.csv("crime.csv")
+neighborhoodClusters <- read_csv('neighborhood_clusters.csv')
+
+neighborhoodClusters <- subset(neighborhoodClusters, select=c("NAME", "NBH_NAMES"))
+names(neighborhoodClusters) <- c('Cluster', 'neighbourhood')
+listings <- left_join(neighborhoodClusters, listings, by="neighbourhood")
 crime$uniqueID <- c(1:nrow(crime))
 ```
 
 To begin, we present various summary statistics for the two datasets (Airbnb and crime) that we are investigating. Below are the structure printouts for both datasets, beginning with Airbnb, followed by crime:  
 
 ```{r}
-loadPkg("scales")
 str(listings)
 str(crime)
 ```
@@ -76,8 +80,6 @@ On the other hand, the crime dataset contains `r comma(nrow(crime))` observation
 An important step to EDA is exploring the data through summary statistics. Since we have already examined the listings dataset thoroughly in Project 1, the following section will primarily focus on the crime dataset. Since we are interested in how crime levels affect Airbnb prices, it is important to take a closer look at the different types of crime. Below is a summary table of the number of crimes by offense and ward: 
 
 ``` {r, include=T}
-
-
 WARD <- c(1:8)
 dt <- table(crime$WARD, crime$OFFENSE)
 TOTAL <- rowSums(dt)
@@ -301,7 +303,15 @@ To combine previous models with crime, we have also included the number of revie
 
 #### 4.5 Machine Learning
 
-[MATT'S MODEL]
+```{r}
+
+
+listings
+crime
+
+table(listings$neighbourhood)
+
+```
 
 ### 5. Conclusion
 
