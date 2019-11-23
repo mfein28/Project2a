@@ -20,12 +20,14 @@ knitr::opts_chunk$set(warning = F,
 # can add quietly=T option to the require() function
 loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.packages(x,dep=T,repos="http://cran.us.r-project.org"); if(!require(x,character.only=T)) stop("Package not found") } }
 
+
 proper <- function(x){
   paste0(toupper(substr(x, 1, 1)), tolower(substr(x, 2, nchar(x))))
 }
 
-loadPkg("memisc")
-loadPkg("dplyr")
+packages <- c('dplyr', 'ggplot2', 'qwraps2', 'memisc', 'pander', 'kableExtra', 'plotly', 'zipcode')
+lapply(packages, require, character.only = TRUE)
+
 ```
 
 ### 1. Introduction
@@ -74,8 +76,7 @@ On the other hand, the crime dataset contains `r comma(nrow(crime))` observation
 An important step to EDA is exploring the data through summary statistics. Since we have already examined the listings dataset thoroughly in Project 1, the following section will primarily focus on the crime dataset. Since we are interested in how crime levels affect Airbnb prices, it is important to take a closer look at the different types of crime. Below is a summary table of the number of crimes by offense and ward: 
 
 ``` {r, include=T}
-loadPkg("pander")
-loadPkg("kableExtra")
+
 
 WARD <- c(1:8)
 dt <- table(crime$WARD, crime$OFFENSE)
@@ -94,7 +95,7 @@ Ward 2 has the most amount of crimes (`r comma(TOTAL[2])`), followed by Ward 6 a
 To better understand the crime data and the underlying relationships, data visualization is a useful tool. This section presents two charts: a bar chart and pie chart. The bar chart is presented below:
 
 ```{r, include = T}
-loadPkg("ggplot2")
+
 fig1 <- ggplot(crime, aes(x = WARD, fill = proper(as.character(OFFENSE)))) + 
   geom_bar() +
   theme_bw() +
@@ -108,7 +109,7 @@ print(fig1 + ggtitle("Frequency of Offense by Type and Ward"))
 Additionally, the same data can be visualized as a pie chart, which shows the percentages of the total number of crimes relative to each ward:
 
 ```{r, include = T}
-loadPkg("plotly")
+
 pie_input <- as.data.frame(cbind(WARD, TOTAL)) %>%
   arrange(WARD)
 fig2 <- plot_ly(pie_input,
@@ -146,7 +147,6 @@ The conventional thought process is that higher crime areas will drive potential
 To test these hypotheses and to determine which one explains the true relationship, we will first merge the crime dataset with the listing dataset and then construct regression models to estimate the effect of crime on listing prices. Prior to any regression analysis, it is always important to take a cursory glance at the summary statistics and simple data visuals in order to get a sense of how the variables relate to one another. Below is a breakdown of the percentage of crimes by zip code:
 
 ``` {r, include = T}
-loadPkg("zipcode")
 data("zipcode")
 zipcode <- zipcode %>%
   filter(state == "DC") %>%
@@ -211,7 +211,6 @@ print(fig4 + ggtitle("Boxplot of Listing Prices by Zip Code"))
 ```
 
 ``` {r, include = T, results = "asis"}
-loadPkg("qwraps2")
 options(qwraps2_markup = "markdown")
 
 summ_table <- 
