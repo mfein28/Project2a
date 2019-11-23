@@ -197,7 +197,11 @@ fig3
 As shown above, even within the the sample of the ten zip codes with the most crime occurences, the first zip code (20004; 1,145 total crimes) has more than double the number of crimes than the tenth zip code (20002; 504 total crimes). Turning our attention to how prices differ, we take a look at the summary statistics for listing price in these two neighborhoods, first in the form of a five number summary, then in the form of a boxplot:
 
 ```{r, include = T}
-fig4 <- ggplot(subset(summ_table_input, price < 1500), aes(x = zip, y = price, fill = zip)) + 
+summ_table_input <- listings %>%
+  select(zip, price) %>%
+  filter(zip == "20004" | zip == "20010" | zip == "20009" | zip == "20002" & price < 1500)
+
+fig4 <- ggplot(summ_table_input, aes(x = zip, y = price, fill = zip)) + 
   geom_boxplot() + 
   theme_bw() +
   labs(x = "Zip Code",
@@ -209,10 +213,6 @@ print(fig4 + ggtitle("Boxplot of Listing Prices by Zip Code"))
 ``` {r, include = T, results = "asis"}
 loadPkg("qwraps2")
 options(qwraps2_markup = "markdown")
-
-summ_table_input <- listings %>%
-  select(zip, price) %>%
-  filter(zip == "20004" | zip == "20010" | zip == "20009" | zip == "20002" & price < 1500)
 
 summ_table <- 
   list("Price" = 
@@ -290,6 +290,11 @@ reg_table <-
 
 reg_table
 ```
+
+Looking at Model 2, which breaks down each of the crime categories and incorporates them into the regression specification, the estimates yield a fascinating result. Examining only the statistically significant coefficients shows that robbery and motor theft negatively affect listing prices, while home theft (other theft is equivalent to home theft) increases listing prices. More specifically, a one percent increase in robbery and motor theft rate leads to an estimated decrease in listing price by $223.14 and $215.03, respectively. On the other hand, a similar one percent increase in home theft leads to an increase of $32.07 in listing prices.  
+The coefficients seem to suggest that both hypotheses may have some merit in this discussion. It is intuitive that neighborhoods with higher robbery and motor theft rates will have lower listing prices. This result corroborates with the idea that fewer people will want to live in neighborhoods where personal and property safety is at risk. However, it also makes sense that home theft may be associated with higher listing prices. After all, wealthier neighborhoods with more luxury goods at home may very well be bigger targets for home invasion. The last category of theft from automobiles is not statistically significant, which is reasonable as theft from cars likely is not associated with listing prices.  
+
+To combine previous models with crime, we have also included the number of reviews and type of room into the regression equation. Unsurprisingly, private rooms and shared rooms lead to a signficantly lower listing price compared to entire homes/apartments. Somewhat more surprising is the fact that increasing the number of reviews actually leads to a decrease in prices. This result may be due to the fact that bad experiences (i.e., ones where guests would be compelled to write a review) may far outnumber good experiences and as such, prices are lower for poorly reviewed listings. More interesting is the fact that adding these two variables causes crime to be reduced to near insignificance. Home theft and motor theft remain signficant, with the effect of home theft nearly halved and motor theft increasing its effect by $40. This result suggests that listing type may be a larger driver of listing price than crime rates.    
 
 #### 4.4 Hedonic Regression Model
 
