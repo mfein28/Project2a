@@ -253,6 +253,12 @@ lm1_input <- lm1_input %>%
 lm1 <- lm(price~total_crimes, lm1_input)
 reg_table <- mtable("Model 1" = lm1,
                     summary.stats = c("R-squared", "F", "p", "N"))
+
+reg_table <- 
+  relabel(reg_table, 
+          "(Intercept)" = "Constant", 
+          total_crimes = "Crimes")
+
 reg_table
 ```
 
@@ -279,7 +285,8 @@ reg_table <- mtable("Model 1" = lm1,
 
 reg_table <- 
   relabel(reg_table, 
-          "(Intercept)" = "Constant", total_crimes = "Crimes",
+          "(Intercept)" = "Constant", 
+          total_crimes = "Crimes",
           theftAuto_rate = "Theft (from auto)",
           theftOther_rate = "Theft (other)",
           robbery_rate = "Robbery",
