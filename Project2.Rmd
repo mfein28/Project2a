@@ -119,10 +119,53 @@ After conducting EDA and looking at the variables at a high-level, we move onto 
 
 #### 3.2 Logistic Regression Model
 
-```{r logreg, echo=FALSE, include=FALSE}
+```{r logreg, echo=FALSE, include=TRUE}
+library(fastDummies)
+listings.room <- dummy_cols(listings$room_type)
+listings.room2 <- cbind(listings, listings.room$`.data_Entire home/apt`, listings.room$`.data_Private room`, listings.room$`.data_Shared room`)
+```
 
+```{r}
+colnames(listings.room2)[18] <- "Entire_Home"
+colnames(listings.room2)[19] <- "Private_Room"
+colnames(listings.room2)[20] <- "Shared_Room"
 
 ```
+
+```{r}
+airbnb.entire <- glm(Entire_Home ~ number_of_reviews + reviews_per_month + availability_365 + neighbourhoodCount, data = listings.room2, binomial(link = "logit"))
+summary(airbnb.entire)
+exp(coef(airbnb.entire))
+
+## CIs using profiled log-likelihood
+confint(airbnb.entire)
+## CIs using standard errors
+confint.default(airbnb.entire)
+```
+
+```{r}
+airbnb.private <- glm(Private_Room ~ calculated_host_listings_count + minimum_nights + number_of_reviews + availability_365 + neighbourhoodCount, data = listings.room2, binomial(link = "logit"))
+summary(airbnb.private)
+exp(coef(airbnb.private))
+
+## CIs using profiled log-likelihood
+confint(airbnb.private)
+## CIs using standard errors
+confint.default(airbnb.private)
+```
+
+```{r}
+airbnb.shared <- glm(Shared_Room ~ calculated_host_listings_count + minimum_nights + number_of_reviews + availability_365 + neighbourhoodCount, data = listings.room2, binomial(link = "logit"))
+summary(airbnb.shared)
+exp(coef(airbnb.shared))
+
+## CIs using profiled log-likelihood
+confint(airbnb.shared)
+## CIs using standard errors
+confint.default(airbnb.shared)
+```
+
+
 
 #### 3.3 Crime and Listing Regressions
 
