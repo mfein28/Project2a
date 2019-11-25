@@ -30,7 +30,7 @@ In Project 1, we examined the Airbnb dataset and conducted basic exploratory dat
 ### 2. Exploratory Data Analysis
 
 ```{r}
-listings <- read_csv('listings.csv')
+listings <- read.csv('listings.csv')
 listings$neighbourhoodCount <- table(listings$neighbourhood)
 crime <- read.csv("crime.csv")
 ```
@@ -52,54 +52,54 @@ On the other hand, the crime dataset contains `r comma(nrow(crime))` observation
 An important step to EDA is exploring the data through summary statistics. Since we have already examined the listings dataset thoroughly in Project 1, the following section will primarily focus on the crime dataset. Since we are interested in how crime levels affect Airbnb prices, it is important to take a closer look at the different types of crime. Below is a summary table of the number of crimes by offense and ward: 
 
 ``` {r, include=T}
-loadPkg("pander")
-loadPkg("dplyr")
-loadPkg("kableExtra")
+#loadPkg("pander")
+#loadPkg("dplyr")
+#loadPkg("kableExtra")
 
-WARD <- c(1:8)
-dt <- table(crime$WARD, crime$OFFENSE)
-TOTAL <- rowSums(dt)
-dt <- cbind(WARD, dt, TOTAL)
+#WARD <- c(1:8)
+#dt <- table(crime$WARD, crime$OFFENSE)
+#TOTAL <- rowSums(dt)
+#dt <- cbind(WARD, dt, TOTAL)
 
-kable(dt) %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F, position = "left")
+#kable(dt) %>%
+  #kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F, position = "left")
 ```
 
-Ward 2 has the most amount of crimes (`r comma(TOTAL[2])`), followed by Ward 6 at `r comma(TOTAL[6])` crimes. Moreover, crime type "Theft/Other" is the most common in all wards as seen in the bar chart above. 
+
 
 #### 2.2 Data Visualization
 
 To better understand the crime data and the underlying relationships, data visualization is a useful tool. This section presents two charts: a bar chart and pie chart. The bar chart is presented below:
 
 ```{r, include = T}
-loadPkg("ggplot2")
-fig1 <- ggplot(crime, aes(x = WARD, fill = proper(as.character(OFFENSE)))) + 
-  geom_bar() +
-  theme_bw() +
-  labs(x = "Ward",
-       y = "Frequency",
-       fill = "Type of Offense") + 
-  scale_x_discrete(limits = c(1:8, "1"))
-print(fig1 + ggtitle("Frequency of Offense by Type and Ward"))
+#loadPkg("ggplot2")
+#fig1 <- ggplot(crime, aes(x = WARD, fill = proper(as.character(OFFENSE)))) + 
+ # geom_bar() +
+  #theme_bw() +
+  #labs(x = "Ward",
+       #y = "Frequency",
+       #fill = "Type of Offense") + 
+  #scale_x_discrete(limits = c(1:8, "1"))
+#print(fig1 + ggtitle("Frequency of Offense by Type and Ward"))
 ```
 
 Additionally, the same data can be visualized as a pie chart, which shows the percentages of the total number of crimes relative to each ward:
 
 ```{r, include = T}
-loadPkg("dplyr")
-loadPkg("plotly")
-pie_input <- as.data.frame(cbind(WARD, TOTAL)) %>%
-  arrange(WARD)
-fig2 <- plot_ly(pie_input,
-                labels = ~WARD,
-                values = ~TOTAL,
-                textinfo = "percent",
-                text = ~paste("Ward", WARD),
-                hoverinfo = "text",
-                type = "pie",
-                textposition = "outside") %>%
-  layout(title = "Percentage Breakdown of Total Crimes by Ward") 
-fig2
+#loadPkg("dplyr")
+#loadPkg("plotly")
+#pie_input <- as.data.frame(cbind(WARD, TOTAL)) %>%
+ # arrange(WARD)
+#fig2 <- plot_ly(pie_input,
+                #labels = ~WARD,
+                #values = ~TOTAL,
+                #textinfo = "percent",
+                #text = ~paste("Ward", WARD),
+                #hoverinfo = "text",
+                #type = "pie",
+                #textposition = "outside") %>%
+  #layout(title = "Percentage Breakdown of Total Crimes by Ward") 
+#fig2
 ```
 
 These summary statistics and charts are particularly important in the context of Airbnb listings. It is not unreasonable to hypothesize that wards with higher number of crimes overall may also exhibit an adverse effect on listing prices. As fewer people want to live in those areas, demand for Airbnbs decrease and in turn, so do prices. Further analysis using regression techniques will be needed to determine the overall effect of crime on prices. 
@@ -109,30 +109,117 @@ These summary statistics and charts are particularly important in the context of
 After conducting EDA and looking at the variables at a high-level, we move onto generating regression models to estimate causal relationships between the two datasets. In this section, we examine five models using the techniques learned in class, beginning with a simple linear regression model within the Airbnb dataset alone. Then we move to a logistic regression in the same dataset. In the third model, we overlay the crime dataset onto the listings dataset in order to explore how crime affects Airbnb listing prices. The penultimate model consists of a hedonic regression used to predict price. Lastly, we implement machine learning methodology to breakdown the primary drivers of price.
 
 #### 3.1 Linear Regression Model
+We used linear regression models to explore the relationship between price and the other variables in the Airbnb data set.  
 
-[POLLY'S MODEL]
+#### Correlation Plot
+To Begin this portion of our analysis, we made a simple correlation plot to identify what correlations exist between the variables.  The correlation plot shows that no strong correlations exist between the data as all of the values are close to zero.  The strongest  positive correlation is .28 between "host listings count" & "avaliability 365." The strongest negative correlation is -.13 between price & number of reviews. 
 
 ```{r base_lib, include=T, echo=F}
 library("dplyr")
 library("car")
 library("corrplot")
+library("ggplot2")
 ```
 
 ``````{r corr, include=T, echo=F}
-listings <- data.frame(read.csv("~/Documents/Project2a/listings.csv", header = TRUE))
-listingsreg<-select(listings,9:15)
+listingsreg<-select(listings,9:17)
 listingsreg<-select(listingsreg,-last_review,-room_type, -reviews_per_month)
-#CorBRN=cor(listings)
-#loadPkg("corrplot")
-#corrplot(CorBRN, method = "number", type="upper")
-
-#str(listings)
 str(listingsreg)
 Listingscor=cor(listingsreg)
 loadPkg("corrplot")
-corrplot(Listingscor, method = "number", type="upper")
+corrplot.mixed(Listingscor,lower.col = "black", number.cex = .7)
+corrplot(Listingscor,lower.col = "black", number.cex = .7)
+```
+
+Before we continued on to build the linear regression models, we removed price outliers using the outlier function from Prof. Lo. By removing the outliers the data took on a more normal looking distribution.  
+
+```{r outlierKD, echo=F}
+outlierKD <- function(dt, var) { 
+     var_name <- eval(substitute(var),eval(dt))
+     na1 <- sum(is.na(var_name))
+     m1 <- mean(var_name, na.rm = T)
+     par(mfrow=c(2, 2), oma=c(0,0,3,0))
+     boxplot(var_name, main="With outliers")
+     hist(var_name, main="With outliers", xlab=NA, ylab=NA)
+     outlier <- boxplot.stats(var_name)$out
+     mo <- mean(outlier)
+     var_name <- ifelse(var_name %in% outlier, NA, var_name)
+     boxplot(var_name, main="Without outliers")
+     hist(var_name, main="Without outliers", xlab=NA, ylab=NA)
+     title("Outlier Check", outer=TRUE)
+     na2 <- sum(is.na(var_name))
+     cat("Outliers identified:", na2 - na1, "n")
+     cat("Propotion (%) of outliers:", round((na2 - na1) / sum(!is.na(var_name))*100, 1), "n")
+     cat("Mean of the outliers:", round(mo, 2), "n")
+     m2 <- mean(var_name, na.rm = T)
+     cat("Mean without removing outliers:", round(m1, 2), "n")
+     cat("Mean if we remove outliers:", round(m2, 2), "n")
+     # response <- readline(prompt="Do you want to remove outliers and to replace with NA? [yes/no]: ")
+     response <- "yes"
+     if(response == "y" | response == "yes"){
+          dt[as.character(substitute(var))] <- invisible(var_name)
+          assign(as.character(as.list(match.call())$dt), dt, envir = .GlobalEnv)
+          cat("Outliers successfully removed", "n")
+          return(invisible(dt))
+     } else{
+          cat("Nothing changed", "n")
+          return(invisible(var_name))
+     }
+}
+
+listingsregtrim <- outlierKD(listingsreg, price)
+str(listingsregtrim)
 
 ```
+
+#### Price vs Number of Reviews
+Next, we created a scatter plot comparing price and number of reviews to get a visual respresentation of the data and to see how it compares to the correlation we saw in the correlation plots. The   
+
+```{r model3a, include=T, echo=FALSE}
+datafit1<- data.frame(listingsregtrim)
+datafit2<- data.frame(listingsregtrim)
+datafit3<- data.frame(listingsregtrim)
+datafit4<- data.frame(listingsregtrim)
+datafit5<- data.frame(listingsregtrim)
+
+loadPkg("ggplot2")
+fit1 <- lm(price ~ number_of_reviews  , data = datafit1)
+summary (fit1)
+ggplot(datafit1) +
+  geom_point(aes(number_of_reviews, price), color="blue") + 
+  labs(title = "Price compared to Number of Reviews") 
+```
+
+#### Price vs Number of Reviews + Number of Host Listings
+```{r model3b, include=T, echo=FALSE}
+fit2 <- lm(price ~ number_of_reviews + calculated_host_listings_count , data = datafit2)
+summary (fit2)
+
+
+
+
+```
+#### Price vs Number of Reviews + Number of Host Listings + Minimum Nights
+```{r model3c, include=T, echo=FALSE}
+ fit3 <- lm(price ~ number_of_reviews + calculated_host_listings_count + minimum_nights , data = datafit3)
+summary (fit3)
+```
+ 
+#### Price vs Number of Reviews + Number of Host Listings + Minimum Nights + Availability 
+```{r model3d, include=T, echo=FALSE}
+ fit4 <- lm(price ~ number_of_reviews + calculated_host_listings_count + minimum_nights + availability_365 , data = datafit4)
+summary (fit4)
+
+
+```
+#### Price vs Number of Reviews + Number of Host Listings + Minimum Nights + Availability + Amount of Airbnbs in Neighborhood
+```{r model3e, include=T, echo=FALSE}
+ fit5 <- lm(price ~ number_of_reviews + calculated_host_listings_count + minimum_nights + availability_365 + neighbourhoodCount, data = datafit5)
+summary (fit5)
+
+```           
+              
+
 
 
 #### 3.2 Logistic Regression Model
