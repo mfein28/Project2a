@@ -27,7 +27,6 @@ proper <- function(x){
 
 packages <- c('ggplot2', 'qwraps2', 'memisc', 'pander', 'kableExtra', 'plotly', 'zipcode', 'scales', 'tidyverse', 'pander', 'kableExtra', 'fastDummies')
 lapply(packages, require, character.only = TRUE)
-
 ```
 
 ### 1. Introduction
@@ -77,8 +76,6 @@ On the other hand, the crime dataset contains `r comma(nrow(crime))` observation
 An important step to EDA is exploring the data through summary statistics. Since we have already examined the listings dataset thoroughly in Project 1, the following section will primarily focus on the crime dataset. Since we are interested in how crime levels affect Airbnb prices, it is important to take a closer look at the different types of crime. Below is a summary table of the number of crimes by offense and ward: 
 
 ``` {r, include=T}
-
-
 WARD <- c(1:8)
 dt <- table(crime$WARD, crime$OFFENSE)
 TOTAL <- rowSums(dt)
@@ -109,7 +106,6 @@ print(fig1 + ggtitle("Frequency of Offense by Type and Ward"))
 Additionally, the same data can be visualized as a pie chart, which shows the percentages of the total number of crimes relative to each ward:
 
 ```{r, include = T}
-
 pie_input <- as.data.frame(cbind(WARD, TOTAL)) %>%
   arrange(WARD)
 fig2 <- plot_ly(pie_input,
