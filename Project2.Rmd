@@ -25,24 +25,24 @@ proper <- function(x){
   paste0(toupper(substr(x, 1, 1)), tolower(substr(x, 2, nchar(x))))
 }
 
-packages <- c('ggplot2', 'qwraps2', 'memisc', 'pander', 'kableExtra', 'plotly', 'zipcode', 'scales', 'tidyverse')
+packages <- c('ggplot2', 'qwraps2', 'memisc', 'pander', 'kableExtra', 'plotly', 'zipcode', 'scales', 'tidyverse', 'pander', 'kableExtra', 'fastDummies')
 lapply(packages, require, character.only = TRUE)
 
 ```
 
 ### 1. Introduction
 
-In Project 1, we examined the AirBnB dataset and conducted basic exloratory data analysis (EDA) with statistical inference to draw baseline relationships between different variables. While exercises in correlation using t-tests, chi-squared tests, and ANOVA tests yielded interesting results, we wanted to dive deeper into the stories behind the numbers. For that, we turn to regressions in order to determine causation between variables and introduce a dataset on crime in order to better extrapolate results to the broader population of AirBnBs. The following paper will continue by describing the data sources for the two dataset. The following section will provide a high-level EDA for the AirBnB and crime datasets. The paper will proceed by conducting a variety of regression techniques, beginning first with AirBnB variables only, examining what factors affect listing prices. Then, second, we overlay the crime data onto the AirBnB data to investigate the effects of crime on prices. The penultimate section of this paper will compare the regression results against one another in order to determine the best model(s). Lastly, this paper will conclude with a summary of findings and areas for further research. 
+In Project 1, we examined the Airbnb dataset and conducted basic exloratory data analysis (EDA) with statistical inference to draw baseline relationships between different variables. While exercises in correlation using t-tests, chi-squared tests, and ANOVA tests yielded interesting results, we wanted to dive deeper into the stories behind the numbers. For that, we turn to regressions in order to determine causation between variables and introduce a dataset on crime in order to better extrapolate results to the broader population of Airbnb's. The following paper will continue by describing the data sources for the two dataset. The following section will provide a high-level EDA for the Airbnb and crime datasets. The paper will proceed by conducting a variety of regression techniques, beginning first with Airbnb variables only, examining what factors affect listing prices. Then, second, we overlay the crime data onto the Airbnb data to investigate the effects of crime on prices. The penultimate section of this paper will compare the regression results against one another in order to determine the best model(s). Lastly, this paper will conclude with a summary of findings and areas for further research. 
 
 ### 2. Data Sources
 
 In this section, we provide a summary of the data sources used in this analysis.
 
-#### 2.1 AirBnB 
+#### 2.1 Airbnb 
 
-The AirBnB data for this project is from InsideAirbnb.com. This website contains information sourced by Murray Cox, who utilized Airbnb’s public application programming interface (API) to mine this data. Originally, Cox scraped this data to identify illegal listings in New York City. He has since expanded his data set offerings to cities across the world and makes this datum available for open source use and research.  
+The Airbnb data for this project is from InsideAirbnb.com. This website contains information sourced by Murray Cox, who utilized Airbnb’s public application programming interface (API) to mine this data. Originally, Cox scraped this data to identify illegal listings in New York City. He has since expanded his data set offerings to cities across the world and makes this datum available for open source use and research.  
 
-Although Cox is potentially a biased source, due to his activist leanings, his datasets originate from AirBnB themselves and are thoroughly documented. We also considered using data from AirBnB directly, however, other studies have shown that this data is outdated and biased in that it only shows the positive side of AirBnB. Mr. Cox, however, seeks to use the company’s own data is that he scraped from the website itself through a well-documented procedure to explore how Airbnb is really affecting our community. Therefore, we decided that the dataset was reliable because of the author’s documentation and his purpose for releasing it.
+Although Cox is potentially a biased source, due to his activist leanings, his datasets originate from Airbnb themselves and are thoroughly documented. We also considered using data from Airbnb directly, however, other studies have shown that this data is outdated and biased in that it only shows the positive side of Airbnb. Mr. Cox, however, seeks to use the company’s own data is that he scraped from the website itself through a well-documented procedure to explore how Airbnb is really affecting our community. Therefore, we decided that the dataset was reliable because of the author’s documentation and his purpose for releasing it.
 
 #### 2.2 Crime Data
 
@@ -53,14 +53,11 @@ This data is shared via an automated process where addresses are geocoded to the
 ### 3. Exploratory Data Analysis
 
 ```{r}
-listings <- read.csv("listings.csv")
+listings <- read.csv('listings.csv')
 listings$neighbourhoodCount <- table(listings$neighbourhood)
 crime <- read.csv("crime.csv")
-neighborhoodClusters <- read_csv('neighborhood_clusters.csv')
-
-neighborhoodClusters <- subset(neighborhoodClusters, select=c("NAME", "NBH_NAMES"))
-names(neighborhoodClusters) <- c('Cluster', 'neighbourhood')
-listings <- left_join(neighborhoodClusters, listings, by="neighbourhood")
+listings <- read.csv("listings.csv")
+listings$neighbourhoodCount <- table(listings$neighbourhood)
 crime$uniqueID <- c(1:nrow(crime))
 ```
 
@@ -80,6 +77,8 @@ On the other hand, the crime dataset contains `r comma(nrow(crime))` observation
 An important step to EDA is exploring the data through summary statistics. Since we have already examined the listings dataset thoroughly in Project 1, the following section will primarily focus on the crime dataset. Since we are interested in how crime levels affect Airbnb prices, it is important to take a closer look at the different types of crime. Below is a summary table of the number of crimes by offense and ward: 
 
 ``` {r, include=T}
+
+
 WARD <- c(1:8)
 dt <- table(crime$WARD, crime$OFFENSE)
 TOTAL <- rowSums(dt)
@@ -97,7 +96,6 @@ Ward 2 has the most amount of crimes (`r comma(TOTAL[2])`), followed by Ward 6 a
 To better understand the crime data and the underlying relationships, data visualization is a useful tool. This section presents two charts: a bar chart and pie chart. The bar chart is presented below:
 
 ```{r, include = T}
-
 fig1 <- ggplot(crime, aes(x = WARD, fill = proper(as.character(OFFENSE)))) + 
   geom_bar() +
   theme_bw() +
@@ -138,13 +136,58 @@ After conducting EDA and looking at the variables at a high-level, we move onto 
 
 #### 4.2 Logistic Regression Model
 
-[ELISE'S MODEL]
+```{r logreg, echo=FALSE, include=TRUE}
+listings.room <- dummy_cols(listings$room_type)
+listings.room2 <- cbind(listings, listings.room$`.data_Entire home/apt`, listings.room$`.data_Private room`, listings.room$`.data_Shared room`)
+```
+
+```{r}
+colnames(listings.room2)[18] <- "Entire_Home"
+colnames(listings.room2)[19] <- "Private_Room"
+colnames(listings.room2)[20] <- "Shared_Room"
+
+```
+
+```{r}
+airbnb.entire <- glm(Entire_Home ~ number_of_reviews + reviews_per_month + availability_365 + neighbourhoodCount, data = listings.room2, binomial(link = "logit"))
+summary(airbnb.entire)
+exp(coef(airbnb.entire))
+
+## CIs using profiled log-likelihood
+confint(airbnb.entire)
+## CIs using standard errors
+confint.default(airbnb.entire)
+```
+
+```{r}
+airbnb.private <- glm(Private_Room ~ calculated_host_listings_count + minimum_nights + number_of_reviews + availability_365 + neighbourhoodCount, data = listings.room2, binomial(link = "logit"))
+summary(airbnb.private)
+exp(coef(airbnb.private))
+
+## CIs using profiled log-likelihood
+confint(airbnb.private)
+## CIs using standard errors
+confint.default(airbnb.private)
+```
+
+```{r}
+airbnb.shared <- glm(Shared_Room ~ calculated_host_listings_count + minimum_nights + number_of_reviews + availability_365 + neighbourhoodCount, data = listings.room2, binomial(link = "logit"))
+summary(airbnb.shared)
+exp(coef(airbnb.shared))
+
+## CIs using profiled log-likelihood
+confint(airbnb.shared)
+## CIs using standard errors
+confint.default(airbnb.shared)
+```
+
+
 
 #### 4.3 Crime and Listing Regressions
 
-One key area of interest is examining the connections between crime and AirBnB prices. There are two primary hypotheses on how crime affects listing prices: (1) higher crime rates reduce demand and lower listing prices; and (2) crime is targeted in wealthier neighborhoods that have higher listing prices.  
+One key area of interest is examining the connections between crime and Airbnb prices. There are two primary hypotheses on how crime affects listing prices: (1) higher crime rates reduce demand and lower listing prices; and (2) crime is targeted in wealthier neighborhoods that have higher listing prices.  
 
-The conventional thought process is that higher crime areas will drive potential customers away. As a result, there will be less overall demand for AirBnBs in that neighborhood, leading to a decline in prices. While this mechanism makes sense at face value, deeper thinking about areas where crime exists and is most prevalent may point to a different directionality. One may argue that more affluent, urban neighborhoods may exhibit higher crime rates -- especially in terms of home or auto theft. Assuming that wealthier and more accessible neighborhoods will have higher AirBnB listing prices, then higher crime rates is a subsequent reaction to higher prices, contrasting the conventional mentality.  
+The conventional thought process is that higher crime areas will drive potential customers away. As a result, there will be less overall demand for Airbnb's in that neighborhood, leading to a decline in prices. While this mechanism makes sense at face value, deeper thinking about areas where crime exists and is most prevalent may point to a different directionality. One may argue that more affluent, urban neighborhoods may exhibit higher crime rates -- especially in terms of home or auto theft. Assuming that wealthier and more accessible neighborhoods will have higher Airbnb listing prices, then higher crime rates is a subsequent reaction to higher prices, contrasting the conventional mentality.  
 
 To test these hypotheses and to determine which one explains the true relationship, we will first merge the crime dataset with the listing dataset and then construct regression models to estimate the effect of crime on listing prices. Prior to any regression analysis, it is always important to take a cursory glance at the summary statistics and simple data visuals in order to get a sense of how the variables relate to one another. Below is a breakdown of the percentage of crimes by zip code:
 
@@ -311,12 +354,43 @@ To combine previous models with crime, we have also included the number of revie
 #### 4.5 Machine Learning
 
 ```{r}
+library(caTools)
+library(rpart)
+library(rpart.plot)
+install.packages("randomForest")
+library(randomForest)
 
+listings <- read_csv("listings.csv")
+neighborhoodClusters <- read_csv('neighborhood_clusters.csv')
+tableCrime <- as.data.frame(table(crime$NEIGHBORHOOD_CLUSTER))
+names(tableCrime) <- c("NAME", "Total")
+tableCrime
 
-listings
-crime
+neighborhoodClusters <- left_join(tableCrime, neighborhoodClusters, by="NAME" )
+neighborhoodClusters <- subset(neighborhoodClusters, select=c("NAME", "NBH_NAMES", "Total"))
+neighborhoodClusters <- neighborhoodClusters[-1,]
+names(neighborhoodClusters) <- c('Cluster', 'neighbourhood', "Total")
+listings <- left_join(neighborhoodClusters, listings, by="neighbourhood", all.y=FALSE)
+listings <- listings[-1,]
+listings$Cluster <- str_remove(listings$Cluster,"Cluster ")
+listingsApartment <- listings %>% filter(str_detect(room_type, "room") == FALSE)
+listingsApartment$quantile <- ntile(listingsApartment$price, 5)
+set.seed(1)
 
-table(listings$neighbourhood)
+split <- sample.split(listingsApartment, SplitRatio = 0.7)
+train <- subset(listingsApartment, split==TRUE)
+test <- subset(listingsApartment, split==FALSE)
+
+tree <- prp(quantile ~ Total + minimum_nights + number_of_reviews + availability_365 + calculated_host_listings_count, data = listingsApartment)
+
+tree.pred <- predict(tree, newdata = test)
+tree.sse <- sum((tree.pred - test$quantile)^2)
+confMatrix <- table(test$quantile, tree.pred)
+accuracy <- sum(diag(confMatrix))/sum(confMatrix)
+accuracy
+summary(tree)
+prp(tree)
+
 
 ```
 
