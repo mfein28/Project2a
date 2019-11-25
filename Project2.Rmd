@@ -128,7 +128,6 @@ After conducting EDA and looking at the variables at a high-level, we move onto 
 
 #### 4.1 Linear Regression Model
 
-[POLLY'S MODEL]
 ```{r base_lib, include=T, echo=F}
 library("dplyr")
 library("car")
@@ -148,7 +147,6 @@ Listingscor=cor(listingsreg)
 loadPkg("corrplot")
 corrplot(Listingscor, method = "number", type="upper")
 
-```
 ```
 
 #### 4.2 Logistic Regression Model
@@ -197,8 +195,6 @@ confint(airbnb.shared)
 ## CIs using standard errors
 confint.default(airbnb.shared)
 ```
-
-
 
 #### 4.3 Crime and Listing Regressions
 
