@@ -36,7 +36,7 @@ In Project 1, we examined the Airbnb dataset and conducted basic exploratory dat
 
 In this section, we provide a summary of the data sources used in this analysis.
 
-#### 2.1 Airbnb 
+#### 2.1 Airbnb Data
 
 The Airbnb data for this project is from InsideAirbnb.com. This website contains information sourced by Murray Cox, who utilized Airbnb’s public application programming interface (API) to mine this data. Originally, Cox scraped this data to identify illegal listings in New York City. He has since expanded his data set offerings to cities across the world and makes this datum available for open source use and research.  
 
