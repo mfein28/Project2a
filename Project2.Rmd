@@ -1,6 +1,6 @@
 ---
 title: "Project 2"
-author: "Matt Fein, Jeffrey Jou, Polly McKim, Pancea Motowi, and Elise Roberts"
+author: "Matt Fein, Jeffrey Jou, Polly McKim, Pancea Motawi, and Elise Roberts"
 date: "11/26/2019"
 output: 
   html_document: 
