@@ -51,10 +51,6 @@ This data is shared via an automated process where addresses are geocoded to the
 ### 3. Exploratory Data Analysis
 
 ```{r}
-listings <- read.csv('listings.csv')
-listings$neighbourhoodCount <- table(listings$neighbourhood)
-crime <- read.csv("crime.csv")
-
 listings <- read.csv("listings.csv")
 listings$neighbourhoodCount <- table(listings$neighbourhood)
 crime$uniqueID <- c(1:nrow(crime))
@@ -132,9 +128,9 @@ After conducting EDA and looking at the variables at a high-level, we move onto 
 
 We used linear regression models to explore the relationship between price and the other variables in the Airbnb data set.  
 
+##### Correlation Plot
 To begin this portion of our analysis, we made a simple correlation plot to identify what correlations exist between the variables.  The correlation plot shows that no strong correlations exist between the data as all of the values are close to zero.  The strongest  positive correlation is .28 between "host listings count" & "avaliability 365." The strongest negative correlation is -.13 between price & number of reviews. 
 
-##### Correlation Plot
 ```{r base_lib, include=T, echo=F}
 loadPkg("dplyr")
 loadPkg("car")
@@ -211,22 +207,28 @@ ggplot(datafit1) +
 ```
 
 ##### Price vs Number of Reviews + Number of Host Listings
+
 ```{r model3b, include=T, echo=FALSE}
 fit2 <- lm(price ~ number_of_reviews + calculated_host_listings_count , data = datafit2)
 summary (fit2)
 ```
+
 ##### Price vs Number of Reviews + Number of Host Listings + Minimum Nights
+
 ```{r model3c, include=T, echo=FALSE}
  fit3 <- lm(price ~ number_of_reviews + calculated_host_listings_count + minimum_nights , data = datafit3)
 summary (fit3)
 ```
  
 ##### Price vs Number of Reviews + Number of Host Listings + Minimum Nights + Availability 
+
 ```{r model3d, include=T, echo=FALSE}
  fit4 <- lm(price ~ number_of_reviews + calculated_host_listings_count + minimum_nights + availability_365 , data = datafit4)
 summary (fit4)
 ```
+
 ##### Price vs Number of Reviews + Number of Host Listings + Minimum Nights + Availability + Amount of Airbnbs in Neighborhood
+
 ```{r model3e, include=T, echo=FALSE}
  fit5 <- lm(price ~ number_of_reviews + calculated_host_listings_count + minimum_nights + availability_365 + neighbourhoodCount, data = datafit5)
 summary (fit5)
