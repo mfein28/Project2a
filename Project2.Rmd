@@ -20,7 +20,6 @@ knitr::opts_chunk$set(warning = F,
 # can add quietly=T option to the require() function
 loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.packages(x,dep=T,repos="http://cran.us.r-project.org"); if(!require(x,character.only=T)) stop("Package not found") } }
 
-
 proper <- function(x){
   paste0(toupper(substr(x, 1, 1)), tolower(substr(x, 2, nchar(x))))
 }
@@ -31,7 +30,7 @@ lapply(packages, require, character.only = TRUE)
 
 ### 1. Introduction
 
-In Project 1, we examined the Airbnb dataset and conducted basic exloratory data analysis (EDA) with statistical inference to draw baseline relationships between different variables. While exercises in correlation using t-tests, chi-squared tests, and ANOVA tests yielded interesting results, we wanted to dive deeper into the stories behind the numbers. For that, we turn to regressions in order to determine causation between variables and introduce a dataset on crime in order to better extrapolate results to the broader population of Airbnb's. The following paper will continue by describing the data sources for the two dataset. The following section will provide a high-level EDA for the Airbnb and crime datasets. The paper will proceed by conducting a variety of regression techniques, beginning first with Airbnb variables only, examining what factors affect listing prices. Then, second, we overlay the crime data onto the Airbnb data to investigate the effects of crime on prices. The penultimate section of this paper will compare the regression results against one another in order to determine the best model(s). Lastly, this paper will conclude with a summary of findings and areas for further research. 
+In Project 1, we examined the Airbnb dataset and conducted basic exploratory data analysis (EDA) with statistical inference to draw baseline relationships between different variables. While exercises in correlation using t-tests, chi-squared tests, and ANOVA tests yielded interesting results, we wanted to dive deeper into the stories behind the numbers. For that, we turn to regressions in order to determine causation between variables and introduce a dataset on crime in order to better extrapolate results to the broader population of Airbnbs. The following paper will continue by first providing a high-level EDA for the Airbnb and crime datasets. Furthermore, the paper will proceed by conducting a variety of regression techniques. We begin first with Airbnb variables only, examining what factors affect listing prices. Then, we overlay the crime data onto the Airbnb data to investigate the effects of crime on prices. The penultimate section of this paper will compare the regression results against one another in order to determine the best model(s). Lastly, this paper will conclude with a summary of findings and areas for further research. 
 
 ### 2. Data Sources
 
@@ -55,6 +54,7 @@ This data is shared via an automated process where addresses are geocoded to the
 listings <- read.csv('listings.csv')
 listings$neighbourhoodCount <- table(listings$neighbourhood)
 crime <- read.csv("crime.csv")
+
 listings <- read.csv("listings.csv")
 listings$neighbourhoodCount <- table(listings$neighbourhood)
 crime$uniqueID <- c(1:nrow(crime))
@@ -63,6 +63,8 @@ crime$uniqueID <- c(1:nrow(crime))
 To begin, we present various summary statistics for the two datasets (Airbnb and crime) that we are investigating. Below are the structure printouts for both datasets, beginning with Airbnb, followed by crime:  
 
 ```{r}
+loadPkg("scales")
+
 str(listings)
 str(crime)
 ```
@@ -121,33 +123,114 @@ fig2
 ```
 
 These summary statistics and charts are particularly important in the context of Airbnb listings. It is not unreasonable to hypothesize that wards with higher number of crimes overall may also exhibit an adverse effect on listing prices. As fewer people want to live in those areas, demand for Airbnbs decrease and in turn, so do prices. Further analysis using regression techniques will be needed to determine the overall effect of crime on prices. 
-
+              
 ### 4. Regression Models
 
 After conducting EDA and looking at the variables at a high-level, we move onto generating regression models to estimate causal relationships between the two datasets. In this section, we examine four models using the techniques learned in class, beginning with a simple linear regression model within the Airbnb dataset alone. Then we move to overlay the crime dataset onto the listings dataset in order to explore how crime affects Airbnb listing prices. The penultimate model consists of a hedonic regression used to predict price. Lastly, we implement machine learning methodology to breakdown the primary drivers of price.
 
 #### 4.1 Linear Regression Model
 
+We used linear regression models to explore the relationship between price and the other variables in the Airbnb data set.  
+
+To begin this portion of our analysis, we made a simple correlation plot to identify what correlations exist between the variables.  The correlation plot shows that no strong correlations exist between the data as all of the values are close to zero.  The strongest  positive correlation is .28 between "host listings count" & "avaliability 365." The strongest negative correlation is -.13 between price & number of reviews. 
+
+##### Correlation Plot
 ```{r base_lib, include=T, echo=F}
-library("dplyr")
-library("car")
-library("corrplot")
+loadPkg("dplyr")
+loadPkg("car")
+loadPkg("corrplot")
+loadPkg("ggplot2")
 ```
 
 ``````{r corr, include=T, echo=F}
-listingsreg<-select(listings,9:15)
+listingsreg<-select(listings,9:17)
 listingsreg<-select(listingsreg,-last_review,-room_type, -reviews_per_month)
-#CorBRN=cor(listings)
-#loadPkg("corrplot")
-#corrplot(CorBRN, method = "number", type="upper")
-
-#str(listings)
 str(listingsreg)
 Listingscor=cor(listingsreg)
 loadPkg("corrplot")
-corrplot(Listingscor, method = "number", type="upper")
-
+corrplot.mixed(Listingscor,lower.col = "black", number.cex = .7)
+corrplot(Listingscor,lower.col = "black", number.cex = .7)
 ```
+
+Before we continued on to build the linear regression models, we removed price outliers using the outlier function from Prof. Lo. By removing the outliers the data took on a more normal looking distribution.  
+
+```{r outlierKD, echo=F}
+outlierKD <- function(dt, var) { 
+     var_name <- eval(substitute(var),eval(dt))
+     na1 <- sum(is.na(var_name))
+     m1 <- mean(var_name, na.rm = T)
+     par(mfrow=c(2, 2), oma=c(0,0,3,0))
+     boxplot(var_name, main="With outliers")
+     hist(var_name, main="With outliers", xlab=NA, ylab=NA)
+     outlier <- boxplot.stats(var_name)$out
+     mo <- mean(outlier)
+     var_name <- ifelse(var_name %in% outlier, NA, var_name)
+     boxplot(var_name, main="Without outliers")
+     hist(var_name, main="Without outliers", xlab=NA, ylab=NA)
+     title("Outlier Check", outer=TRUE)
+     na2 <- sum(is.na(var_name))
+     cat("Outliers identified:", na2 - na1, "n")
+     cat("Propotion (%) of outliers:", round((na2 - na1) / sum(!is.na(var_name))*100, 1), "n")
+     cat("Mean of the outliers:", round(mo, 2), "n")
+     m2 <- mean(var_name, na.rm = T)
+     cat("Mean without removing outliers:", round(m1, 2), "n")
+     cat("Mean if we remove outliers:", round(m2, 2), "n")
+     # response <- readline(prompt="Do you want to remove outliers and to replace with NA? [yes/no]: ")
+     response <- "yes"
+     if(response == "y" | response == "yes"){
+          dt[as.character(substitute(var))] <- invisible(var_name)
+          assign(as.character(as.list(match.call())$dt), dt, envir = .GlobalEnv)
+          cat("Outliers successfully removed", "n")
+          return(invisible(dt))
+     } else{
+          cat("Nothing changed", "n")
+          return(invisible(var_name))
+     }
+}
+
+listingsregtrim <- outlierKD(listingsreg, price)
+str(listingsregtrim)
+```
+
+##### Price vs Number of Reviews
+Next, we created a scatter plot comparing price and number of reviews to get a visual respresentation of the data and to see how it compares to the correlation we saw in the correlation plots. The   
+
+```{r model3a, include=T, echo=FALSE}
+datafit1<- data.frame(listingsregtrim)
+datafit2<- data.frame(listingsregtrim)
+datafit3<- data.frame(listingsregtrim)
+datafit4<- data.frame(listingsregtrim)
+datafit5<- data.frame(listingsregtrim)
+
+loadPkg("ggplot2")
+fit1 <- lm(price ~ number_of_reviews  , data = datafit1)
+summary (fit1)
+ggplot(datafit1) +
+  geom_point(aes(number_of_reviews, price), color="blue") + 
+  labs(title = "Price compared to Number of Reviews") 
+```
+
+##### Price vs Number of Reviews + Number of Host Listings
+```{r model3b, include=T, echo=FALSE}
+fit2 <- lm(price ~ number_of_reviews + calculated_host_listings_count , data = datafit2)
+summary (fit2)
+```
+##### Price vs Number of Reviews + Number of Host Listings + Minimum Nights
+```{r model3c, include=T, echo=FALSE}
+ fit3 <- lm(price ~ number_of_reviews + calculated_host_listings_count + minimum_nights , data = datafit3)
+summary (fit3)
+```
+ 
+##### Price vs Number of Reviews + Number of Host Listings + Minimum Nights + Availability 
+```{r model3d, include=T, echo=FALSE}
+ fit4 <- lm(price ~ number_of_reviews + calculated_host_listings_count + minimum_nights + availability_365 , data = datafit4)
+summary (fit4)
+```
+##### Price vs Number of Reviews + Number of Host Listings + Minimum Nights + Availability + Amount of Airbnbs in Neighborhood
+```{r model3e, include=T, echo=FALSE}
+ fit5 <- lm(price ~ number_of_reviews + calculated_host_listings_count + minimum_nights + availability_365 + neighbourhoodCount, data = datafit5)
+summary (fit5)
+``` 
 
 #### 4.2 Crime and Listing Regressions
 
