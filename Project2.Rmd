@@ -124,7 +124,7 @@ These summary statistics and charts are particularly important in the context of
 
 ### 4. Regression Models
 
-After conducting EDA and looking at the variables at a high-level, we move onto generating regression models to estimate causal relationships between the two datasets. In this section, we examine five models using the techniques learned in class, beginning with a simple linear regression model within the Airbnb dataset alone. Then we move to a logistic regression in the same dataset. In the third model, we overlay the crime dataset onto the listings dataset in order to explore how crime affects Airbnb listing prices. The penultimate model consists of a hedonic regression used to predict price. Lastly, we implement machine learning methodology to breakdown the primary drivers of price.
+After conducting EDA and looking at the variables at a high-level, we move onto generating regression models to estimate causal relationships between the two datasets. In this section, we examine four models using the techniques learned in class, beginning with a simple linear regression model within the Airbnb dataset alone. Then we move to overlay the crime dataset onto the listings dataset in order to explore how crime affects Airbnb listing prices. The penultimate model consists of a hedonic regression used to predict price. Lastly, we implement machine learning methodology to breakdown the primary drivers of price.
 
 #### 4.1 Linear Regression Model
 
