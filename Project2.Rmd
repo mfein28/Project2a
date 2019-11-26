@@ -363,7 +363,34 @@ To combine previous models with crime, we have also included the number of revie
 
 #### 4.4 Hedonic Regression Model
 
-[PANCEA'S MODEL]
+```{r, echo = FALSE, include = TRUE}
+data <- read.csv(file = "Aibnb_listings.csv", header = TRUE)
+data1<- data[,-5]
+data2 <- na.omit(data1)
+data3 <- data2[,c(9,10,11,13,14,15)]
+
+cor(data3)
+pairs(data3)
+
+model <- lm(price ~ room_type + number_of_reviews + availability_365 + minimum_nights + reviews_per_month + calculated_host_listings_count, data = data)
+summary(model)
+coef(model)
+confint(model)
+plot(model, las = 1)
+car::vif(model)
+
+data4<- data[-c(497,1302,1967,3211,3213,3245,3820, 8064),]
+model2 <- lm(price ~ room_type + number_of_reviews + availability_365 + minimum_nights + reviews_per_month + calculated_host_listings_count, data = data4)
+plot(model2, las = 1)
+coef(model2)
+summary(model2)
+car::vif(model2)
+
+
+predict(model2,data.frame (room_type = "Entire home/apt",number_of_reviews = c(10), availability_365 = c(365), minimum_nights = c(1), reviews_per_month = c(0.5), calculated_host_listings_count = c(1)))
+predict(model2,data.frame (room_type = "Private room",number_of_reviews = c(10), availability_365 = c(365), minimum_nights = c(1), reviews_per_month = c(0.5), calculated_host_listings_count = c(1)))
+predict(model2,data.frame (room_type = "Shared room",number_of_reviews = c(10), availability_365 = c(365), minimum_nights = c(1), reviews_per_month = c(0.5), calculated_host_listings_count = c(1)))
+```
 
 #### 4.5 Machine Learning
 
