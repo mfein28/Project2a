@@ -1,5 +1,5 @@
 ---
-title: "Project 2"
+title: "Project 2: Predicting Airbnb Listing Price"
 author: "Matt Fein, Jeffrey Jou, Polly McKim, Pancea Motawi, and Elise Roberts"
 date: "11/26/2019"
 output: 
@@ -149,54 +149,7 @@ corrplot(Listingscor, method = "number", type="upper")
 
 ```
 
-#### 4.2 Logistic Regression Model
-
-```{r logreg, echo=FALSE, include=TRUE}
-listings.room <- dummy_cols(listings$room_type)
-listings.room2 <- cbind(listings, listings.room$`.data_Entire home/apt`, listings.room$`.data_Private room`, listings.room$`.data_Shared room`)
-```
-
-```{r}
-colnames(listings.room2)[18] <- "Entire_Home"
-colnames(listings.room2)[19] <- "Private_Room"
-colnames(listings.room2)[20] <- "Shared_Room"
-
-```
-
-```{r}
-airbnb.entire <- glm(Entire_Home ~ number_of_reviews + reviews_per_month + availability_365 + neighbourhoodCount, data = listings.room2, binomial(link = "logit"))
-summary(airbnb.entire)
-exp(coef(airbnb.entire))
-
-## CIs using profiled log-likelihood
-confint(airbnb.entire)
-## CIs using standard errors
-confint.default(airbnb.entire)
-```
-
-```{r}
-airbnb.private <- glm(Private_Room ~ calculated_host_listings_count + minimum_nights + number_of_reviews + availability_365 + neighbourhoodCount, data = listings.room2, binomial(link = "logit"))
-summary(airbnb.private)
-exp(coef(airbnb.private))
-
-## CIs using profiled log-likelihood
-confint(airbnb.private)
-## CIs using standard errors
-confint.default(airbnb.private)
-```
-
-```{r}
-airbnb.shared <- glm(Shared_Room ~ calculated_host_listings_count + minimum_nights + number_of_reviews + availability_365 + neighbourhoodCount, data = listings.room2, binomial(link = "logit"))
-summary(airbnb.shared)
-exp(coef(airbnb.shared))
-
-## CIs using profiled log-likelihood
-confint(airbnb.shared)
-## CIs using standard errors
-confint.default(airbnb.shared)
-```
-
-#### 4.3 Crime and Listing Regressions
+#### 4.2 Crime and Listing Regressions
 
 One key area of interest is examining the connections between crime and Airbnb prices. There are two primary hypotheses on how crime affects listing prices: (1) higher crime rates reduce demand and lower listing prices; and (2) crime is targeted in wealthier neighborhoods that have higher listing prices.  
 
@@ -360,11 +313,11 @@ The coefficients seem to suggest that both hypotheses may have some merit in thi
 
 To combine previous models with crime, we have also included the number of reviews and type of room into the regression equation. Unsurprisingly, private rooms and shared rooms lead to a signficantly lower listing price compared to entire homes/apartments. Somewhat more surprising is the fact that increasing the number of reviews actually leads to a decrease in prices. This result may be due to the fact that bad experiences (i.e., ones where guests would be compelled to write a review) may far outnumber good experiences and as such, prices are lower for poorly reviewed listings. More interesting is the fact that adding these two variables causes crime to be reduced to near insignificance. Home theft and motor theft remain signficant, with the effect of home theft nearly halved and motor theft increasing its effect by $40. This result suggests that listing type may be a larger driver of listing price than crime rates.    
 
-#### 4.4 Hedonic Regression Model
+#### 4.3 Hedonic Regression Model
 
 [PANCEA'S MODEL]
 
-#### 4.5 Machine Learning
+#### 4.4 Machine Learning
 
 ```{r}
 library(caTools)
@@ -403,8 +356,6 @@ accuracy <- sum(diag(confMatrix))/sum(confMatrix)
 accuracy
 summary(tree)
 prp(tree)
-
-
 ```
 
 ### 5. Conclusion
