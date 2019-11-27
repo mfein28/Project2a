@@ -125,11 +125,10 @@ After conducting EDA and looking at the variables at a high-level, we move onto 
 #### 4.1 Linear Regression Model
 We used linear regression models to explore the relationship between price and the other variables in the Airbnb data set.  
 
-##### Correlation Plot
-To begin this portion of our analysis, we made a simple correlation plot to identify what correlations exist between the variables.  The correlation plot shows that no strong correlations exist between the data as all of the values are close to zero.  The strongest  positive correlation is .28 between "host listings count" & "avaliability 365." The strongest negative correlation is -.13 between price & number of reviews. 
+To begin this portion of our analysis, we made a simple correlation plot to identify what correlations exist between the variables. The correlation plot shows that no strong correlations exist between the data as all of the values are close to zero. The strongest positive correlation is .28 between host listings count and avaliability 365. The strongest negative correlation is -.13 between price and number of reviews. 
 
 
-```{r base_lib, include=T, echo=F}
+```{r base_lib}
 library(dplyr)
 library(car)
 library(corrplot)
@@ -137,18 +136,19 @@ library(ggplot2)
 library(corrplot)
 ```
 
-``````{r corr, include=T, echo=F}
+``````{r corr, include=T}
 listingsreg<-dplyr::select(listings,9:17)
 listingsreg<-dplyr::select(listingsreg,-last_review,-room_type, -reviews_per_month)
-str(listingsreg)
-Listingscor=cor(listingsreg)
-corrplot.mixed(Listingscor, number.cex = .7)
-corrplot(Listingscor,number.cex = .7)
+
+Listingscor<-cor(listingsreg)
+colnames(Listingscor) <- c("Price", "Min. Nights", "# of Reviews", "Host Listings Count", "Availability", "Neighborhood Count")
+rownames(Listingscor) <- c("Price", "Min. Nights", "# of Reviews", "Host Listings Count", "Availability", "Neighborhood Count")
+corrplot(Listingscor, method = "shade")
 ```
 
 Before we continued on to build the linear regression models, we removed price outliers using the outlier function from Prof. Lo. By removing the outliers the data took on a more normal looking distribution.  
 
-```{r outlierKD, echo=F}
+```{r outlierKD, include = T}
 outlierKD <- function(dt, var) { 
      var_name <- eval(substitute(var),eval(dt))
      na1 <- sum(is.na(var_name))
@@ -183,69 +183,85 @@ outlierKD <- function(dt, var) {
 }
 
 listingsregtrim <- outlierKD(listingsreg, price)
-str(listingsregtrim)
 ```
 
-##### Price vs Number of Reviews
-Next, we created a scatter plot comparing price and number of reviews to get a visual respresentation of the data and to see how it compares to the correlation we saw in the correlation plots. The   
+Next, we created a scatterplot comparing price and number of reviews to get a visual respresentation of the data and to see how it compares to the correlation we saw in the correlation plots. The resulting figure is shown below:
 
 ```{r model3a, include=T, echo=FALSE}
+loadPkg("ggplot2")
+
 datafit1<- data.frame(listingsregtrim)
 datafit2<- data.frame(listingsregtrim)
 datafit3<- data.frame(listingsregtrim)
 datafit4<- data.frame(listingsregtrim)
 datafit5<- data.frame(listingsregtrim)
 
-loadPkg("ggplot2")
-fit1 <- lm(price ~ number_of_reviews  , data = datafit1)
-summary (fit1)
 ggplot(datafit1) +
   geom_point(aes(number_of_reviews, price), color="blue") + 
-  labs(title = "Price compared to Number of Reviews") 
+  labs(title = "Price vs. Number of Reviews",
+       x = "Number of Reviews",
+       y = "Price") + 
+  theme_bw()
 ```
 
-##### Price vs Number of Reviews + Number of Host Listings
+The scatterplot shows no significant linear relationship between price and number of reviews, suggesting that a linear regression may not be the best model for this data. Nonetheless, we soldiered on with the regression. The regression output is shown below:
+
+``` {r, include = T}
+loadPkg("memisc")
+fit1 <- lm(price ~ number_of_reviews  , data = datafit1)
+
+reg_table <- mtable("Model 1" = fit1,
+                    summary.stats = c("R-squared", "F", "p", "N"))
+
+reg_table <- 
+  relabel(reg_table, 
+          "(Intercept)" = "Constant", 
+          number_of_reviews = "Number of Reviews")
+
+reg_table
+```
+
+The estimated coefficient on the number of reviews indicates that an additional number of review will **decrease** listing price by 9.4 cents. This result is statistically significant; however, looking at the R^2^ value, only 0.7% of the total variation in price is explained by number of reviews. As such, there is likely other factors that contribute to price. After implementing multivariate regressions with five different combinations of relevant regressors, we will compare the results of the models and determine the best linear regression specification that fits the data. The regression outputs are shown below: 
 
 ```{r model3b, include=T, echo=FALSE}
 fit2 <- lm(price ~ number_of_reviews + calculated_host_listings_count , data = datafit2)
-summary (fit2)
+fit3 <- lm(price ~ number_of_reviews + calculated_host_listings_count + minimum_nights , data = datafit3)
+fit4 <- lm(price ~ number_of_reviews + calculated_host_listings_count + minimum_nights + availability_365 , data = datafit4)
+fit5 <- lm(price ~ number_of_reviews + calculated_host_listings_count + minimum_nights + availability_365 + neighbourhoodCount, data = datafit5)
+
+reg_table <- mtable("Model 1" = fit1,
+                    "Model 2" = fit2,
+                    "Model 3" = fit3,
+                    "Model 4" = fit4,
+                    "Model 5" = fit5,
+                    summary.stats = c("R-squared", "F", "p", "N"))
+
+reg_table <- 
+  relabel(reg_table, 
+          "(Intercept)" = "Constant", 
+          number_of_reviews = "Number of Reviews",
+          calculated_host_listings_count = "Host Listings Count",
+          minimum_nights = "Min. Nights",
+          availability_365 = "Availability",
+          neighbourhoodCount = "Neighborhood Count")
+
+reg_table
 ```
 
-##### Price vs Number of Reviews + Number of Host Listings + Minimum Nights
+Looking at the various models, one trend is apparent. As we include more relevant regressors, the R^2^ value continues to increase. However, the R^2^ value is capped at 0.022, suggesting that, at best, only 2.2% of the total variation in price is captured by the regressors -- not good!  
 
-```{r model3c, include=T, echo=FALSE}
- fit3 <- lm(price ~ number_of_reviews + calculated_host_listings_count + minimum_nights , data = datafit3)
-summary (fit3)
-```
- 
-##### Price vs Number of Reviews + Number of Host Listings + Minimum Nights + Availability 
+Analyzing the individual regressors shows that many of them are statistically significant. Generally speaking, the number of reviews and minimum nights **negatively impact** listing price. In other words, as number of reviews and minimum nights increases, price is decrased by an average of 9 cents and 15 cents, respectively (depending on which model is used). This result is not terribly surprising, considering that more popular Airbnbs (ones with many reviews) may be cheaper. Additionally, Airbnb hosts often offer discounted prices for monthly rentals or even annual rentals (i.e., minimum nights = 30 or 365), so prices are lower in those cases as well.  
 
-```{r model3d, include=T, echo=FALSE}
- fit4 <- lm(price ~ number_of_reviews + calculated_host_listings_count + minimum_nights + availability_365 , data = datafit4)
-summary (fit4)
-```
+On the other hand, host listing count and availability **positively affect** the listing price by an average of 27 cents and 5 cents, respectively. These results are also not surprising. Higher host listings count suggest that the owner of the Airbnb is a commericial owner and may have more experience with Airbnb clients, therefore can price more to the market. Additionally, they may offer more amenities in their listings, driving price up as well. Furthermore, availability is seen to increase prices, likely due to the fact that Airbnb hosts that have their listings available more often will have more traffic, driving price up.  
 
-##### Price vs Number of Reviews + Number of Host Listings + Minimum Nights + Availability + Amount of Airbnbs in Neighborhood
-
-```{r model3e, include=T, echo=FALSE}
- fit5 <- lm(price ~ number_of_reviews + calculated_host_listings_count + minimum_nights + availability_365 + neighbourhoodCount, data = datafit5)
-summary (fit5)
-
-#### 4.2 Crime and Listing Regressions
-#CorBRN=cor(listings)
-#loadPkg("corrplot")
-#corrplot(CorBRN, method = "number", type="upper")
-#str(listings)
-str(listingsreg)
-Listingscor=cor(listingsreg)
-loadPkg("corrplot")
-corrplot(Listingscor, method = "number", type="upper")
-```
+In addition to understand and interpreting the regression output, it is also crucial evaluate the models and choose a specification that fits the data best. Looking at the R^2^ values, Models 4 and 5 explain the most variation, both at 2.2%. However, since neighborhood count is not statistically signficant, the best model is Model 4, since adding not stastically signficant regressors may put the model at risk of overfitting. In all, number of reviews, host listings count, minimum nights, and availability are included in the regression model for price. However, since the R^2^ values are still low, our team turned to outside factors -- crime -- to try and capture more of the variation in price. 
 
 #### 4.2 Crime and Listing Regressions
 
 One key area of interest is examining the connections between crime and Airbnb prices. There are two primary hypotheses on how crime affects listing prices: (1) higher crime rates reduce demand and lower listing prices; and (2) crime is targeted in wealthier neighborhoods that have higher listing prices.  
+
 The conventional thought process is that higher crime areas will drive potential customers away. As a result, there will be less overall demand for Airbnb's in that neighborhood, leading to a decline in prices. While this mechanism makes sense at face value, deeper thinking about areas where crime exists and is most prevalent may point to a different directionality. One may argue that more affluent, urban neighborhoods may exhibit higher crime rates -- especially in terms of home or auto theft. Assuming that wealthier and more accessible neighborhoods will have higher Airbnb listing prices, then higher crime rates is a subsequent reaction to higher prices, contrasting the conventional mentality.  
+
 To test these hypotheses and to determine which one explains the true relationship, we will first merge the crime dataset with the listing dataset and then construct regression models to estimate the effect of crime on listing prices. Prior to any regression analysis, it is always important to take a cursory glance at the summary statistics and simple data visuals in order to get a sense of how the variables relate to one another. Below is a breakdown of the percentage of crimes by zip code:
 
 ``` {r, include = T}
@@ -321,6 +337,7 @@ print(tab,
 ```
 
 Interestingly enough, looking at the basic summary tables of the average prices in the two highest crime zip codes (20004 and 20010) and lowest crime zip codes (20002 and 20009), the former has a higher average listing price. This result suggests that perhaps contrary to conventional wisdom, it is indeed the case that crime is targeted in more affluent neighborhoods, if we assume that higher listing prices are correlated with weathlier neighborhoods (that may be the subject of a future study). Of course, this table and subsquent boxplot only captures a very small sample -- too small to make any substantive claims about crime and listing price. In fact, if we had any such claims, we would be falling into the classic trope of correlation implying causation, which we have well learned to be false. As such, we now turn our attention to the most important topic on hand: regressions.  
+
 We begin first by building a simple regression model to estimate the effect of crime on listing price. After assessing this preliminary model using various evaluation techniques, we aim to tune the model, either through linearization or adding additional relevant regressors to the model. Below are the regression results from the simple linear regression of price vs. total crime:
 
 ``` {r, include = T}
@@ -354,6 +371,7 @@ reg_table
 ```
 
 The OLS estimate for the number of crimes on listing prices produces a coefficient of -0.024, suggesting that increasing the number of crimes by 1 will decrease the listing price by 2.4 cents. However, this coefficient is not statistically significantly different from 0. Additionally, this model yields an R^2^ value of 0.00, indicating that only none of the variation in price is captured in this regression specification. Moreover, the p-value is much larger than the alpha level of 0.05, suggesting that the overall model is not significant.  
+
 While the estimated effect of total crime on price does not show any significant results and therefore cannot shed light on either of the hypotheses, the sign of the coefficient does suggest that the conventional theory might be the true story. However, the low R^2^ value shows that there is still much work that can be done to improve the model. Now that we've established the connection between crime and prices, it is also interesting to determine what type of crime affects prices the most. Below is the regression output of price vs. type of crime:
 
 ``` {r, include = T}
@@ -385,73 +403,247 @@ reg_table
 ```
 
 Looking at Model 2, which breaks down each of the crime categories and incorporates them into the regression specification, the estimates yield a fascinating result. Examining only the statistically significant coefficients shows that robbery and motor theft negatively affect listing prices, while home theft (other theft is equivalent to home theft) increases listing prices. More specifically, a one percent increase in robbery and motor theft rate leads to an estimated decrease in listing price by $223.14 and $215.03, respectively. On the other hand, a similar one percent increase in home theft leads to an increase of $32.07 in listing prices.  
+
 The coefficients seem to suggest that both hypotheses may have some merit in this discussion. It is intuitive that neighborhoods with higher robbery and motor theft rates will have lower listing prices. This result corroborates with the idea that fewer people will want to live in neighborhoods where personal and property safety is at risk. However, it also makes sense that home theft may be associated with higher listing prices. After all, wealthier neighborhoods with more luxury goods at home may very well be bigger targets for home invasion. The last category of theft from automobiles is not statistically significant, which is reasonable as theft from cars likely is not associated with listing prices.  
+
 To combine previous models with crime, we have also included the number of reviews and type of room into the regression equation. Unsurprisingly, private rooms and shared rooms lead to a signficantly lower listing price compared to entire homes/apartments. Somewhat more surprising is the fact that increasing the number of reviews actually leads to a decrease in prices. This result may be due to the fact that bad experiences (i.e., ones where guests would be compelled to write a review) may far outnumber good experiences and as such, prices are lower for poorly reviewed listings. More interesting is the fact that adding these two variables causes crime to be reduced to near insignificance. Home theft and motor theft remain signficant, with the effect of home theft nearly halved and motor theft increasing its effect by $40. This result suggests that listing type may be a larger driver of listing price than crime rates.    
 
 #### 4.3 Hedonic Regression Model
 
-```{r, echo = FALSE, include = FALSE}
+For our teams's third model, we wanted to use a regression technique commonly used in the field of economics: hedonic regression. Hedonic regression is a revealed-preference method used in economics and consumer science to determine the relative importance of the variables which affect the price of a good or service. To start, we used basic data visualization techniques to draw out any clear associations between the variables. Below is a pairwise scatterplot of the relevant regressors:
+
+```{r}
 data <- read.csv(file = "listings.csv", header = TRUE)
 data1<- data[,-5]
 data2 <- na.omit(data1)
 data3 <- data2[,c(9,10,11,13,14,15)]
 cor(data3)
+```
+
+```{r, include = T}
 pairs(data3)
+```
+
+A cursory glance at the scatterplots show no clear relationship between any of the variables. Moving forward, we implemented the hedonic regression specification and ran a couple of model diagnostics to determine whether the model is a good fit. The regression output and diagnostic charts are below:
+
+```{r, include = T}
 model <- lm(price ~ room_type + number_of_reviews + availability_365 + minimum_nights + reviews_per_month + calculated_host_listings_count, data = data)
-summary(model)
-coef(model)
-confint(model)
+
+reg_table <- mtable("Model 1" = model,
+                    summary.stats = c("R-squared", "F", "p", "N"))
+reg_table <- 
+  relabel(reg_table, 
+          "(Intercept)" = "Constant", 
+          `room_type: Private room/Entire home/apt` = "Private Room/Entire Home/Apt",
+          `room_type: Shared room/Entire home/apt` = "Shared Room/Entire Home/Apt",
+          number_of_reviews = "Number of Reviews",
+          availability_365 = "Availability",
+          minimum_nights = "Min. Nights",
+          reviews_per_month = "Reviews Per Month",
+          calculated_host_listings_count = "Host Listings Count")
+reg_table
+```
+
+The regression estimates show that all but number of reviews is statistically significant in predicitng listing price. Room type, minimum nights, and reviews per month **negatively** affect price, while availability and host listings count **positively** affect price. These results largely echo the results of the linear regression from section 4.1. However, the R^2^ value has increased substantially to 0.18, indicating that 18% of the variation in price is now explained through this model.  
+
+```{r, include = T}
 plot(model, las = 1)
 car::vif(model)
+```
+
+Looking at the plots, outliers do appear to be affecting the regression. As such, for the next iteration of the model specification, we have chosen to eliminate the outliers present. Additionally, the VIF test shows values that are all less than 10, indicating that there is not much multicollinearity between the regressors -- good news! We ran the same model with the updated dataset:
+
+``` {r, include = T}
 data4<- data[-c(497,1302,1967,3211,3213,3245,3820, 8064),]
 model2 <- lm(price ~ room_type + number_of_reviews + availability_365 + minimum_nights + reviews_per_month + calculated_host_listings_count, data = data4)
+
+reg_table <- mtable("Model 1" = model,
+                    "Model 2" = model2,
+                    summary.stats = c("R-squared", "F", "p", "N"))
+reg_table <- 
+  relabel(reg_table, 
+          "(Intercept)" = "Constant", 
+          `room_type: Private room/Entire home/apt` = "Private Room/Entire Home/Apt",
+          `room_type: Shared room/Entire home/apt` = "Shared Room/Entire Home/Apt",
+          number_of_reviews = "Number of Reviews",
+          availability_365 = "Availability",
+          minimum_nights = "Min. Nights",
+          reviews_per_month = "Reviews Per Month",
+          calculated_host_listings_count = "Host Listings Count")
+reg_table
+```
+
+After eliminating the outliers for Model 2, the regression coefficients are largely unchanged, but the R^2^ value increases by 3%, from 0.18 to 0.21. In addition, the diagnostic plots and tests show the same results as before:
+
+```{r, include = T}
 plot(model2, las = 1)
-coef(model2)
-summary(model2)
 car::vif(model2)
+```
+
+```{r}
 predict(model2,data.frame (room_type = "Entire home/apt",number_of_reviews = c(10), availability_365 = c(365), minimum_nights = c(1), reviews_per_month = c(0.5), calculated_host_listings_count = c(1)))
+
 predict(model2,data.frame (room_type = "Private room",number_of_reviews = c(10), availability_365 = c(365), minimum_nights = c(1), reviews_per_month = c(0.5), calculated_host_listings_count = c(1)))
+
 predict(model2,data.frame (room_type = "Shared room",number_of_reviews = c(10), availability_365 = c(365), minimum_nights = c(1), reviews_per_month = c(0.5), calculated_host_listings_count = c(1)))
 ```
 
+To see how these variables affect listing price, we chose an example and ran it through the regression equation. Since room type seems to be the primary driver, only that variable is changed. The others are: 
+
+* Number of reviews = 10
+* Availabilty = 365
+* Minimum nights = 1
+* Reviews per month = 0.5
+* Host listings count = 1
+
+With a room type of "shared room", the model predicts a listing price of $15.56. With a private room, the price increases to $111.68; and finally, with room type of "entire home/apt," the predicted listing price is $206.06. 
+
 #### 4.4 Machine Learning
+
+Apart from building regression models, our team also wanted to implement machine learning techniques for dimension reduction and variable selection in predicting price quantile. This section begins by constructing a decision tree that will split the data algorithmically. Following the tree, we implement the KNN procedure in determining price quantile.  
+
+The results of the tree classification are shown below along with a visual representation of the decision tree. Again, we predict price quantile using various regressors including: total crime count, minimum nights, number of reviews, availability, and host listing count.
+
 ```{r, include = T}
-listings <- read_csv("listings.csv")
-neighborhoodClusters <- read_csv('neighborhood_clusters.csv')
+loadPkg("data.table")
+loadPkg("rattle")
+loadPkg("rpart.plot")
+
+# Load datasets
+listings <- read.csv("listings.csv")
+neighborhoodClusters <- read.csv("neighborhood_clusters.csv")
 crime <- read_csv("crime.csv")
+
+# Added neighborhood cluster to crime
 tableCrime <- as.data.frame(table(crime$NEIGHBORHOOD_CLUSTER))
 names(tableCrime) <- c("NAME", "Total")
+
+# Join neighborhood clusters to listings data
 neighborhoodClusters <- left_join(tableCrime, neighborhoodClusters, by="NAME" )
 neighborhoodClusters <- subset(neighborhoodClusters, select=c("NAME", "NBH_NAMES", "Total"))
 neighborhoodClusters <- neighborhoodClusters[-1,]
 names(neighborhoodClusters) <- c('Cluster', 'neighbourhood', "Total")
+
 listings <- left_join(neighborhoodClusters, listings, by="neighbourhood", all.y=FALSE)
 listings <- listings[-1,]
 listings$Cluster <- str_remove(listings$Cluster,"Cluster ")
+
+# Create quantiles 
 listingsApartment <- listings %>% filter(str_detect(room_type, "room") == FALSE)
-listingsApartment$quantile <- ntile(listingsApartment$price, 5)
+listingsApartment$quantile <- as.factor(ntile(listingsApartment$price, 4))
+setDT(listingsApartment)
+listingsApartment <- listingsApartment[, .(quantile,
+                                           Total,
+                                           `Min. Nights` = minimum_nights,
+                                           `Number of Reviews` = number_of_reviews,
+                                           Availability = availability_365,
+                                           `Host Listing Count` = calculated_host_listings_count)]
+
+# Implement decision tree protocol
+listingsfit <- rpart(quantile ~ Total + `Min. Nights` + `Number of Reviews` + Availability + `Host Listing Count`, data = listingsApartment)
+
+# Plot tree
+plot(listingsfit, uniform=TRUE, main="Classification Tree for Listings", margin = 0.05)
+text(listingsfit, use.n=TRUE, all=TRUE, cex=.7)
+```
+
+Looking at the decision tree, the nodes are split using number of reviews, host listing count, minimum nights, and total crime count. Overall, the nodes do not appear to be predicting the quantiles very well. Further analysis using a confusion matrix is needed to see the overall accuracy of the tree.
+
+```{r, include = T}
+loadPkg("caret")
+cm = confusionMatrix(predict(listingsfit, type = "class"), reference = listingsApartment[, quantile])
+print('Overall: ')
+cm$overall
+print('Class: ')
+cm$byClass
+```
+
+As predicted, the overall model accuracy is less than 1%, signaling that the decision tree does not offer any insight in terms of predictive ability. Below are the cross-validation results:
+
+```{r, include = T}
+printcp(listingsfit)
+plotcp(listingsfit)
+```
+
+Again, these summaries and plots reaffirm that this model does not hold much predictive power. Moving forward, we implement the KNN methodology to see if it yields better results. The first output uses a *k* = 7.
+
+```{r, include = T}
+loadPkg("FNN")
+
+scaledListings <- as.data.frame(scale(listingsApartment[,2:6], center = T, scale = T))
+
 set.seed(1)
-split <- sample.split(listingsApartment, SplitRatio = 0.7)
-train <- subset(listingsApartment, split==TRUE)
-test <- subset(listingsApartment, split==FALSE)
-tree <- randomForest(quantile ~ Total + minimum_nights + number_of_reviews + availability_365 + calculated_host_listings_count, data = listingsApartment)
-tree.pred <- predict(tree, newdata = test)
-tree.sse <- sum((tree.pred - test$quantile)^2)
-confMatrix <- table(test$quantile, tree.pred)
-accuracy <- sum(diag(confMatrix))/sum(confMatrix)
-accuracy
-summary(tree)
+sample <- sample(2, nrow(scaledListings), replace = T, prob=c(0.67, 0.33))
+training <- scaledListings[sample == 1, 1:5]
+test <- scaledListings[sample == 2, 1:5]
+
+trainingLabels <- as.data.frame(listingsApartment[sample == 1, 1])
+testLabels <- as.data.frame(listingsApartment[sample == 2, 1])
 ```
 
 ```{r, include = T}
-library(class)
-pr <- knn(train, test, cl=trainTarget, k=50)
-matrix <- table(pr, testTarget)
-accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100}
-accuracy(matrix)
-summarise(pr)
+trainingLabels <- trainingLabels[, 1, drop = T]
+testLabels <- testLabels[, 1, drop = T]
+listings_pred <- knn(train = training, test = test, cl = trainingLabels, k = 7)
+
+loadPkg("gmodels")
+loadPkg("pander")
+cross_table <- CrossTable(testLabels, listings_pred, prop.chisq = F)
 ```
+
+Using *k* = 7, the overall accruacy of the KNN methodology is `r round((256+169+139+271)/2111*100, 2)`%. Next, we try to find the optimal *k*-value that will give us the highest accuracy rate. For that, we implement Dr. Lo's "chooseK" function.
+
+```{r, include = T}
+chooseK = function(k, train_set, val_set, train_class, val_class){
+  
+  # Build knn with k neighbors considered.
+  set.seed(1)
+  class_knn = knn(train = train_set,    #<- training set cases
+                  test = val_set,       #<- test set cases
+                  cl = train_class,     #<- category for classification
+                  k = k)               #<- number of neighbors considered
+                                        #   If true, all distances equal to the kth 
+                                        #   largest are included
+  
+  tab = table(class_knn, val_class)
+  
+  # Calculate the accuracy.
+  accu = sum(tab[row(tab) == col(tab)]) / sum(tab)                         
+  cbind(k = k, accuracy = accu)
+}
+
+knn_different_k <- sapply(seq(1, 21, by = 2), 
+                         function(x) chooseK(x, 
+                                             train_set = training, 
+                                             val_set = test, 
+                                             train_class = trainingLabels,
+                                             val_class = testLabels))
+
+knn_different_k = data.frame(k = knn_different_k[1,],
+                             accuracy = knn_different_k[2,])
+
+ggplot(knn_different_k,
+       aes(x = k, y = accuracy)) +
+  geom_line(color = "blue") +
+  geom_point(size = 1) + 
+  labs(main = "Accuracy Rates of Different k-values",
+       x = "k-value",
+       y = "Accuracy") + 
+  theme_bw()
+```
+
+Looking at the graph above, a *k*-value of 11 and 21 yield the highest accuracy rate of 40.5%. As such, the best model using the KNN methodology is one that uses *k* = 11. 
 
 ### 5. Conclusion
 
-[insert conclusion]
+Now that we have finished our rigorous, quantitative of the analysis, we turn our attention to deciding which method best suits the question at hand: determining the variables that affect Airbnb listing price.  
+
+Our first jab at modeling using both univariate and multivariate regression specification did not yield promising results. R^2^ values were generally low due to the fact that the data in hand did not have a good linear relationship.  
+
+As such, we moved to incorporating crime statistics to determine if those would be strong drivers of price. After adding crime rates of different types of offenses into the model specification, we found certain crimes (namely home theft and motor theft) did have a statistically significant effect on listing price. However, with the addition of room type and number of reviews, those previously significant estimates on crime faded to insignificance, indicating that internal Airbnb factors (room type and reviews) may still be the primary drivers of price.  
+
+As such, we followed up on the crime rate analysis using a hedonic regression model. That model produced statistically signficant results and determined that the primary driver of price is in fact, room type. As evidenced by our demonstration, an entire home/apartment is more than 10 times the cost of a shared room.  
+
+Lastly, we took a step back and implemented machine learning techniques for variable selection in order to find the main determinants of price. Unfortunately, both the decision tree and the KNN model yielded unconvincing results with low accuracy rates.  
+
+**In summary, we find that room type is the primary driver of listing price and the hedonic model is best suited for the data.**
