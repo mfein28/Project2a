@@ -241,48 +241,13 @@ Listingscor=cor(listingsreg)
 loadPkg("corrplot")
 corrplot(Listingscor, method = "number", type="upper")
 ```
-#### 4.2 Logistic Regression Model
-```{r logreg, echo=FALSE, include=TRUE}
-listings.room <- dummy_cols(listings$room_type)
-listings.room2 <- cbind(listings, listings.room$`.data_Entire home/apt`, listings.room$`.data_Private room`, listings.room$`.data_Shared room`)
-```
-```{r}
-colnames(listings.room2)[18] <- "Entire_Home"
-colnames(listings.room2)[19] <- "Private_Room"
-colnames(listings.room2)[20] <- "Shared_Room"
-```
-```{r}
-airbnb.entire <- glm(Entire_Home ~ number_of_reviews + reviews_per_month + availability_365 + neighbourhoodCount, data = listings.room2, binomial(link = "logit"))
-summary(airbnb.entire)
-exp(coef(airbnb.entire))
-## CIs using profiled log-likelihood
-confint(airbnb.entire)
-## CIs using standard errors
-confint.default(airbnb.entire)
-```
-```{r}
-airbnb.private <- glm(Private_Room ~ calculated_host_listings_count + minimum_nights + number_of_reviews + availability_365 + neighbourhoodCount, data = listings.room2, binomial(link = "logit"))
-summary(airbnb.private)
-exp(coef(airbnb.private))
-## CIs using profiled log-likelihood
-confint(airbnb.private)
-## CIs using standard errors
-confint.default(airbnb.private)
-```
 
-```{r}
-airbnb.shared <- glm(Shared_Room ~ calculated_host_listings_count + minimum_nights + number_of_reviews + availability_365 + neighbourhoodCount, data = listings.room2, binomial(link = "logit"))
-summary(airbnb.shared)
-exp(coef(airbnb.shared))
-## CIs using profiled log-likelihood
-confint(airbnb.shared)
-## CIs using standard errors
-confint.default(airbnb.shared)
-```
-#### 4.3 Crime and Listing Regressions
+#### 4.2 Crime and Listing Regressions
+
 One key area of interest is examining the connections between crime and Airbnb prices. There are two primary hypotheses on how crime affects listing prices: (1) higher crime rates reduce demand and lower listing prices; and (2) crime is targeted in wealthier neighborhoods that have higher listing prices.  
 The conventional thought process is that higher crime areas will drive potential customers away. As a result, there will be less overall demand for Airbnb's in that neighborhood, leading to a decline in prices. While this mechanism makes sense at face value, deeper thinking about areas where crime exists and is most prevalent may point to a different directionality. One may argue that more affluent, urban neighborhoods may exhibit higher crime rates -- especially in terms of home or auto theft. Assuming that wealthier and more accessible neighborhoods will have higher Airbnb listing prices, then higher crime rates is a subsequent reaction to higher prices, contrasting the conventional mentality.  
 To test these hypotheses and to determine which one explains the true relationship, we will first merge the crime dataset with the listing dataset and then construct regression models to estimate the effect of crime on listing prices. Prior to any regression analysis, it is always important to take a cursory glance at the summary statistics and simple data visuals in order to get a sense of how the variables relate to one another. Below is a breakdown of the percentage of crimes by zip code:
+
 ``` {r, include = T}
 data("zipcode")
 zipcode <- zipcode %>%
@@ -325,11 +290,14 @@ fig3 <- plot_ly(crime_count[1:10, ],
   layout(title = "Percentage Breakdown Crimes in Top Ten Zip Codes") 
 fig3
 ```
+
 As shown above, even within the the sample of the ten zip codes with the most crime occurences, the first zip code (20004; 1,145 total crimes) has more than double the number of crimes than the tenth zip code (20002; 504 total crimes). Turning our attention to how prices differ, we take a look at the summary statistics for listing price in these two neighborhoods, first in the form of a five number summary, then in the form of a boxplot:
+
 ```{r, include = T}
 summ_table_input <- listings %>%
   select(zip, price) %>%
-  filter(zip == "20004" | zip == "20010" | zip == "20009" | zip == "20002" & price < 1500)
+  filter(zip == "20004" | zip == "20010" | zip == "20009" | zip == "20002") %>%
+  filter(price < 1500)
 fig4 <- ggplot(summ_table_input, aes(x = zip, y = price, fill = zip)) + 
   geom_boxplot() + 
   theme_bw() +
@@ -351,8 +319,10 @@ print(tab,
       rtitle = "Summary Statistics",
       cnames = c("20002 (low)", "20004 (high)", "20009 (low)", "20010 (high)"))
 ```
+
 Interestingly enough, looking at the basic summary tables of the average prices in the two highest crime zip codes (20004 and 20010) and lowest crime zip codes (20002 and 20009), the former has a higher average listing price. This result suggests that perhaps contrary to conventional wisdom, it is indeed the case that crime is targeted in more affluent neighborhoods, if we assume that higher listing prices are correlated with weathlier neighborhoods (that may be the subject of a future study). Of course, this table and subsquent boxplot only captures a very small sample -- too small to make any substantive claims about crime and listing price. In fact, if we had any such claims, we would be falling into the classic trope of correlation implying causation, which we have well learned to be false. As such, we now turn our attention to the most important topic on hand: regressions.  
 We begin first by building a simple regression model to estimate the effect of crime on listing price. After assessing this preliminary model using various evaluation techniques, we aim to tune the model, either through linearization or adding additional relevant regressors to the model. Below are the regression results from the simple linear regression of price vs. total crime:
+
 ``` {r, include = T}
 crime_rates <- crime %>%
   select(zip, OFFENSE) %>%
@@ -382,8 +352,10 @@ reg_table <-
           total_crimes = "Crimes")
 reg_table
 ```
+
 The OLS estimate for the number of crimes on listing prices produces a coefficient of -0.024, suggesting that increasing the number of crimes by 1 will decrease the listing price by 2.4 cents. However, this coefficient is not statistically significantly different from 0. Additionally, this model yields an R^2^ value of 0.00, indicating that only none of the variation in price is captured in this regression specification. Moreover, the p-value is much larger than the alpha level of 0.05, suggesting that the overall model is not significant.  
 While the estimated effect of total crime on price does not show any significant results and therefore cannot shed light on either of the hypotheses, the sign of the coefficient does suggest that the conventional theory might be the true story. However, the low R^2^ value shows that there is still much work that can be done to improve the model. Now that we've established the connection between crime and prices, it is also interesting to determine what type of crime affects prices the most. Below is the regression output of price vs. type of crime:
+
 ``` {r, include = T}
 lm2 <- lm(price~theftOther_rate + theftAuto_rate + robbery_rate + motorTheft_rate,
           data = lm1_input)
@@ -411,13 +383,14 @@ reg_table <-
           `as.factor(room_type): Shared room/Entire home/apt` = "Shared Room/Entire Home/Apt")
 reg_table
 ```
+
 Looking at Model 2, which breaks down each of the crime categories and incorporates them into the regression specification, the estimates yield a fascinating result. Examining only the statistically significant coefficients shows that robbery and motor theft negatively affect listing prices, while home theft (other theft is equivalent to home theft) increases listing prices. More specifically, a one percent increase in robbery and motor theft rate leads to an estimated decrease in listing price by $223.14 and $215.03, respectively. On the other hand, a similar one percent increase in home theft leads to an increase of $32.07 in listing prices.  
 The coefficients seem to suggest that both hypotheses may have some merit in this discussion. It is intuitive that neighborhoods with higher robbery and motor theft rates will have lower listing prices. This result corroborates with the idea that fewer people will want to live in neighborhoods where personal and property safety is at risk. However, it also makes sense that home theft may be associated with higher listing prices. After all, wealthier neighborhoods with more luxury goods at home may very well be bigger targets for home invasion. The last category of theft from automobiles is not statistically significant, which is reasonable as theft from cars likely is not associated with listing prices.  
 To combine previous models with crime, we have also included the number of reviews and type of room into the regression equation. Unsurprisingly, private rooms and shared rooms lead to a signficantly lower listing price compared to entire homes/apartments. Somewhat more surprising is the fact that increasing the number of reviews actually leads to a decrease in prices. This result may be due to the fact that bad experiences (i.e., ones where guests would be compelled to write a review) may far outnumber good experiences and as such, prices are lower for poorly reviewed listings. More interesting is the fact that adding these two variables causes crime to be reduced to near insignificance. Home theft and motor theft remain signficant, with the effect of home theft nearly halved and motor theft increasing its effect by $40. This result suggests that listing type may be a larger driver of listing price than crime rates.    
 
-
 #### 4.3 Hedonic Regression Model
-```{r, echo = FALSE, include = FLASE}
+
+```{r, echo = FALSE, include = FALSE}
 data <- read.csv(file = "listings.csv", header = TRUE)
 data1<- data[,-5]
 data2 <- na.omit(data1)
@@ -440,10 +413,9 @@ predict(model2,data.frame (room_type = "Entire home/apt",number_of_reviews = c(1
 predict(model2,data.frame (room_type = "Private room",number_of_reviews = c(10), availability_365 = c(365), minimum_nights = c(1), reviews_per_month = c(0.5), calculated_host_listings_count = c(1)))
 predict(model2,data.frame (room_type = "Shared room",number_of_reviews = c(10), availability_365 = c(365), minimum_nights = c(1), reviews_per_month = c(0.5), calculated_host_listings_count = c(1)))
 ```
-```
 
-
-```{r}
+#### 4.4 Machine Learning
+```{r, include = T}
 listings <- read_csv("listings.csv")
 neighborhoodClusters <- read_csv('neighborhood_clusters.csv')
 crime <- read_csv("crime.csv")
@@ -471,5 +443,15 @@ accuracy
 summary(tree)
 ```
 
+```{r, include = T}
+library(class)
+pr <- knn(train, test, cl=trainTarget, k=50)
+matrix <- table(pr, testTarget)
+accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100}
+accuracy(matrix)
+summarise(pr)
+```
 
+### 5. Conclusion
 
+[insert conclusion]
